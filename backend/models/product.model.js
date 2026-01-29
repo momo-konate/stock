@@ -47,12 +47,23 @@ const Product = sequelize.define('Product', {
   dateCreation: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
+  alertThreshold: {
+    type: DataTypes.INTEGER,
+    defaultValue: 10
+  },
+  categorie: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'Général'
   }
+}, {
+  paranoid: true // Active le "Soft Delete" (ajoute deletedAt)
 });
 
-// Synchronisation du modèle
-sequelize.sync()
-  .then(() => console.log('Base de données synchronisée'))
-  .catch(err => console.error('Erreur de synchronisation:', err));
 
 export { sequelize, Product };

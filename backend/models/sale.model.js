@@ -33,10 +33,30 @@ const Sale = sequelize.define('Sale', {
   dateVente: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
+  clientId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
+  paymentType: {
+    type: DataTypes.ENUM('cash', 'credit', 'mixte'),
+    defaultValue: 'cash'
+  },
+  amountPaid: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0
+  },
+  paymentStatus: {
+    type: DataTypes.ENUM('paid', 'partial', 'unpaid'),
+    defaultValue: 'paid'
   }
+}, {
+  paranoid: true // Active le "Soft Delete"
 });
 
-// Synchronisation automatique
-Sale.sync();
 
 export { Sale };

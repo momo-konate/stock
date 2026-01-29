@@ -4,6 +4,7 @@ import { Product } from '../models/product.model.js';
 export const getProducts = async (req, res) => {
   try {
     const products = await Product.findAll({
+      where: { userId: req.ownerId },
       order: [['createdAt', 'DESC']]
     });
     res.json(products);
@@ -15,8 +16,16 @@ export const getProducts = async (req, res) => {
 // Créer un nouveau produit
 export const createProduct = async (req, res) => {
   try {
-    const { nom, description, quantite, prix } = req.body;
-    const newProduct = await Product.create({ nom, description, quantite, prix });
+    const { nom, description, quantite, prix, alertThreshold, categorie } = req.body;
+    const newProduct = await Product.create({ 
+      nom, 
+      description, 
+      quantite, 
+      prix, 
+      alertThreshold: alertThreshold || 10,
+      categorie: categorie || 'Général',
+      userId: req.ownerId 
+    });
     res.status(201).json(newProduct);
   } catch (error) {
     res.status(400).json({ message: 'Erreur lors de la création du produit', error: error.message });
@@ -27,14 +36,14 @@ export const createProduct = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nom, description, quantite, prix } = req.body;
+    const { nom, description, quantite, prix, alertThreshold, categorie } = req.body;
     
-    const product = await Product.findByPk(id);
+    const product = await Product.findOne({ where: { id, userId: req.ownerId } });
     if (!product) {
       return res.status(404).json({ message: 'Produit non trouvé' });
     }
 
-    await product.update({ nom, description, quantite, prix });
+    await product.update({ nom, description, quantite, prix, alertThreshold, categorie });
     res.json(product);
   } catch (error) {
     res.status(400).json({ message: 'Erreur lors de la mise à jour du produit', error: error.message });
@@ -45,7 +54,7 @@ export const updateProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await Product.findByPk(id);
+    const product = await Product.findOne({ where: { id, userId: req.ownerId } });
     
     if (!product) {
       return res.status(404).json({ message: 'Produit non trouvé' });

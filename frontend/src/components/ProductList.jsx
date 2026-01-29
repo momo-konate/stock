@@ -1,99 +1,93 @@
 import React from 'react';
-import { Edit2, Trash2, Package, AlertCircle } from 'lucide-react';
+import { Edit2, Trash2, Package, ShoppingBag, RotateCcw } from 'lucide-react';
 
-const ProductList = ({ products, onEdit, onDelete, isLoading }) => {
+const ProductList = ({ products, onEdit, onDelete, onSell, onResetStock, isLoading, userRole }) => {
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3].map((n) => (
+          <div key={n} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 animate-pulse h-48"></div>
+        ))}
       </div>
     );
   }
 
   if (products.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
-        <Package className="mx-auto text-slate-300 mb-3" size={48} />
-        <p className="text-slate-500 font-medium">Aucun produit dans le stock.</p>
+      <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300">
+        <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Package className="text-slate-400" size={32} />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900">Aucun produit</h3>
+        <p className="text-slate-500 mt-2">Commencez par ajouter votre premier article.</p>
       </div>
     );
   }
 
   return (
-    <div className="card">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="px-6 py-4 text-sm font-semibold text-slate-600">Nom</th>
-              <th className="px-6 py-4 text-sm font-semibold text-slate-600">Description</th>
-              <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-center">Quantité</th>
-              <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-right">Prix</th>
-              <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {products.map((product) => {
-              const isLowStock = product.quantite < 10 && product.quantite > 0;
-              const isOutOfStock = product.quantite === 0;
-              
-              return (
-                <tr 
-                  key={product.id} 
-                  className={`transition-colors border-l-4 ${
-                    isOutOfStock ? 'bg-red-100/30 border-red-600' : 
-                    isLowStock ? 'bg-red-50 border-red-500/50' : 
-                    'hover:bg-slate-50 border-transparent'
-                  }`}
-                >
-                  <td className="px-6 py-4 font-bold text-slate-800">
-                    <div className="flex items-center gap-2">
-                      {product.nom}
-                      {isLowStock && <AlertCircle size={16} className="text-red-600 animate-ping-short" />}
-                      {isOutOfStock && <AlertCircle size={18} className="text-red-700" />}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-slate-500 truncate max-w-[200px] font-medium">{product.description || '-'}</td>
-                  <td className="px-6 py-4 text-center">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black ring-2 ${
-                      product.quantite >= 10 ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : 
-                      product.quantite > 0 ? 'bg-red-600 text-white ring-red-300 animate-pulse' : 
-                      'bg-slate-900 text-white ring-slate-400'
-                    }`}>
-                      {product.quantite === 0 ? 'RUPTURE' : `${product.quantite} UNITÉS`}
-                      {isLowStock && <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                      </span>}
-                    </span>
-                  </td>
-                  <td className={`px-6 py-4 text-right font-bold ${isLowStock || isOutOfStock ? 'text-red-700' : 'text-slate-700'}`}>
-                    {product.prix.toLocaleString('fr-FR')} FCFA
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => onEdit(product)}
-                        className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                        title="Modifier"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button
-                        onClick={() => onDelete(product.id)}
-                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Supprimer"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {products.map((product) => (
+        <div key={product.id} className="group bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">
+                  {product.categorie || 'Général'}
+                </span>
+              </div>
+              <h3 className="font-bold text-lg text-slate-900 group-hover:text-primary-600 transition-colors">{product.nom}</h3>
+              <p className="text-sm text-slate-500 mt-1 line-clamp-2">{product.description || 'Aucune description'}</p>
+            </div>
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+              product.quantite > (product.alertThreshold || 10) 
+                ? 'bg-emerald-100 text-emerald-700' 
+                : 'bg-red-100 text-red-700 animate-pulse'
+            }`}>
+              Stock: {product.quantite}
+            </span>
+          </div>
+          
+          <div className="flex justify-between items-end mt-4">
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Prix Unitaire</p>
+              <p className="text-2xl font-black text-slate-900">{product.prix.toLocaleString('fr-FR')} <span className="text-base font-normal text-slate-500">FCFA</span></p>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-slate-100 flex gap-2">
+            <button 
+              onClick={() => onSell(product)}
+              className="flex-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 group/btn"
+            >
+              <ShoppingBag size={18} className="transition-transform group-hover/btn:scale-110" />
+              Vendre
+            </button>
+            <button 
+              onClick={() => onEdit(product)}
+              className="p-2.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all"
+              title="Modifier"
+            >
+              <Edit2 size={18} />
+            </button>
+            <>
+              <button 
+                onClick={() => onResetStock(product.id)}
+                className="p-2.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
+                title="Vider le stock (remettre à 0)"
+              >
+                <RotateCcw size={18} />
+              </button>
+              <button 
+                onClick={() => onDelete(product.id)}
+                className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                title="Supprimer"
+              >
+                <Trash2 size={18} />
+              </button>
+            </>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };

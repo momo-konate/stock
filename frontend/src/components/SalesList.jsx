@@ -1,7 +1,10 @@
 import React from 'react';
-import { History, TrendingUp } from 'lucide-react';
+import { History, TrendingUp, Printer, Eye, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const SalesList = ({ sales, isLoading }) => {
+const SalesList = ({ sales, isLoading, onViewTicket, onDeleteSale, userRole }) => {
+  const navigate = useNavigate();
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -28,8 +31,8 @@ const SalesList = ({ sales, isLoading }) => {
               <th className="px-6 py-4 text-sm font-semibold text-emerald-800">Date</th>
               <th className="px-6 py-4 text-sm font-semibold text-emerald-800">Produit</th>
               <th className="px-6 py-4 text-sm font-semibold text-emerald-800 text-center">Quantité</th>
-              <th className="px-6 py-4 text-sm font-semibold text-emerald-800 text-right">Prix Unitaire</th>
               <th className="px-6 py-4 text-sm font-semibold text-emerald-800 text-right">Total</th>
+              <th className="px-6 py-4 text-sm font-semibold text-emerald-800 text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -49,8 +52,25 @@ const SalesList = ({ sales, isLoading }) => {
                     x {sale.quantite}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right text-slate-600">{sale.prixUnitaire.toLocaleString('fr-FR')} FCFA</td>
                 <td className="px-6 py-4 text-right font-bold text-emerald-700">{sale.total.toLocaleString('fr-FR')} FCFA</td>
+                <td className="px-6 py-4 text-center">
+                  <div className="flex justify-center gap-2">
+                    <button 
+                      onClick={() => onViewTicket ? onViewTicket(sale) : navigate(`/ticket/${sale.id}`)}
+                      className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+                      title="Voir / Imprimer le ticket"
+                    >
+                      <Printer size={18} />
+                    </button>
+                    <button 
+                      onClick={() => onDeleteSale(sale.id)}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      title="Supprimer la vente"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

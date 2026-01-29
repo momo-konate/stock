@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
 
+const CATEGORIES = [
+  'Général',
+  'Boissons',
+  'Alimentation',
+  'Électronique',
+  'Vêtements',
+  'Hygiène',
+  'Divertissement',
+  'Autre'
+];
+
 const ProductForm = ({ product, onSubmit, onCancel, isLoading }) => {
   const [formData, setFormData] = useState({
     nom: '',
     description: '',
     quantite: 0,
-    prix: 0
+    prix: 0,
+    alertThreshold: 10,
+    categorie: 'Général'
   });
 
   useEffect(() => {
@@ -14,7 +27,9 @@ const ProductForm = ({ product, onSubmit, onCancel, isLoading }) => {
         nom: product.nom || '',
         description: product.description || '',
         quantite: product.quantite || 0,
-        prix: product.prix || 0
+        prix: product.prix || 0,
+        alertThreshold: product.alertThreshold || 10,
+        categorie: product.categorie || 'Général'
       });
     }
   }, [product]);
@@ -23,7 +38,7 @@ const ProductForm = ({ product, onSubmit, onCancel, isLoading }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'quantite' || name === 'prix' ? Number(value) : value
+      [name]: name === 'quantite' || name === 'prix' || name === 'alertThreshold' ? Number(value) : value
     }));
   };
 
@@ -47,6 +62,21 @@ const ProductForm = ({ product, onSubmit, onCancel, isLoading }) => {
         />
       </div>
       
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Catégorie</label>
+        <select
+          name="categorie"
+          value={formData.categorie}
+          onChange={handleChange}
+          className="input bg-white"
+          required
+        >
+          {CATEGORIES.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
         <textarea
@@ -84,6 +114,20 @@ const ProductForm = ({ product, onSubmit, onCancel, isLoading }) => {
             required
           />
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Seuil d'alerte stock</label>
+        <input
+          type="number"
+          name="alertThreshold"
+          value={formData.alertThreshold}
+          onChange={handleChange}
+          className="input"
+          min="1"
+          required
+        />
+        <p className="text-xs text-slate-500 mt-1">L'alerte s'activera quand le stock sera inférieur à ce nombre.</p>
       </div>
 
       <div className="flex gap-3 pt-4">
