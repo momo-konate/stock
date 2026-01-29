@@ -35,7 +35,7 @@ import * as XLSX from 'xlsx';
 import { 
   Plus, LayoutDashboard, Database, AlertCircle, CheckCircle2, ShoppingCart, 
   History, LogOut, User as UserIcon, Trash2, Wallet, Printer, 
-  FileSpreadsheet, BarChart3, UserCircle, Shield, Settings, Users, Phone, TrendingUp, Truck
+  FileSpreadsheet, BarChart3, UserCircle, Shield, Settings, Users, Phone, TrendingUp, Truck, Menu, X
 } from 'lucide-react';
 
 const ProtectedRoute = ({ children }) => {
@@ -48,6 +48,7 @@ const Dashboard = () => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('inventory');
   const [toast, setToast] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
@@ -219,6 +220,7 @@ const Dashboard = () => {
               <span className="text-xl font-bold text-slate-900 tracking-tight">StockPro</span>
             </div>
             
+            {/* Menu Desktop */}
             <div className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
               <button 
                 onClick={() => setActiveTab('inventory')}
@@ -298,7 +300,17 @@ const Dashboard = () => {
               )}
             </div>
 
-            <div className="flex items-center gap-4">
+            {/* Bouton Menu Mobile */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 text-slate-600 hover:text-primary-600 transition-colors"
+              aria-label="Menu"
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+
+            {/* Info Utilisateur Desktop */}
+            <div className="hidden md:flex items-center gap-4">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
                 <div className="bg-slate-200 p-1 rounded-full">
                   <UserIcon size={14} className="text-slate-600" />
@@ -321,6 +333,116 @@ const Dashboard = () => {
               </button>
             </div>
           </div>
+
+          {/* Menu Mobile Déroulant */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden border-t border-slate-200 py-4 space-y-2 animate-in slide-in-from-top duration-200">
+              <button 
+                onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }}
+                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === 'inventory' ? 'bg-primary-50 text-primary-600 border-l-4 border-primary-600' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Stock
+              </button>
+              <button 
+                onClick={() => { setActiveTab('sales'); setIsMobileMenuOpen(false); }}
+                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === 'sales' ? 'bg-emerald-50 text-emerald-600 border-l-4 border-emerald-600' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Ventes
+              </button>
+              <button 
+                onClick={() => { setActiveTab('expenses'); setIsMobileMenuOpen(false); }}
+                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                  activeTab === 'expenses' ? 'bg-violet-50 text-violet-600 border-l-4 border-violet-600' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <Wallet size={16} />
+                Caisse
+              </button>
+              <button 
+                onClick={() => { setActiveTab('clients'); setIsMobileMenuOpen(false); }}
+                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                  activeTab === 'clients' ? 'bg-primary-50 text-primary-600 border-l-4 border-primary-600' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <Users size={16} />
+                Clients
+              </button>
+              <button 
+                onClick={() => { setActiveTab('suppliers'); setIsMobileMenuOpen(false); }}
+                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                  activeTab === 'suppliers' ? 'bg-amber-50 text-amber-600 border-l-4 border-amber-600' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <Truck size={16} />
+                Fournisseurs
+              </button>
+              {user?.role === 'admin' && (
+                <button 
+                  onClick={() => { setActiveTab('trash'); setIsMobileMenuOpen(false); }}
+                  className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                    activeTab === 'trash' ? 'bg-red-50 text-red-600 border-l-4 border-red-600' : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <Trash2 size={16} />
+                  Corbeille
+                </button>
+              )}
+              {user?.role === 'admin' && (
+                <button 
+                  onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }}
+                  className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                    activeTab === 'users' ? 'bg-emerald-50 text-emerald-600 border-l-4 border-emerald-600' : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <UserCircle size={16} />
+                  Personnel
+                </button>
+              )}
+              {user?.role === 'admin' && (
+                <button 
+                  onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }}
+                  className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                    activeTab === 'settings' ? 'bg-slate-50 text-slate-900 border-l-4 border-slate-900' : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <Settings size={16} />
+                  Réglages
+                </button>
+              )}
+              
+              {/* Info utilisateur et déconnexion en mobile */}
+              <div className="border-t border-slate-200 pt-4 mt-4">
+                <div className="flex items-center justify-between px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-slate-200 p-1.5 rounded-full">
+                      <UserIcon size={16} className="text-slate-600" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-bold text-slate-700">{user?.username}</span>
+                      {user?.role === 'admin' && (
+                        <span className="ml-2 px-1.5 py-0.5 bg-primary-100 text-primary-700 text-[10px] font-black rounded uppercase">Admin</span>
+                      )}
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      if (window.confirm('Voulez-vous vraiment vous déconnecter ?')) {
+                        logout();
+                      }
+                    }}
+                    className="p-2 text-slate-400 hover:text-red-600 transition-colors"
+                    title="Déconnexion"
+                  >
+                    <LogOut size={20} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 

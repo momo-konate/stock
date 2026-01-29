@@ -6,7 +6,7 @@ import { registerSchema, loginSchema } from '../schemas/auth.schema.js';
 import Joi from 'joi';
 const resetPasswordSchema = Joi.object({
   email: Joi.string().email().required(),
-  answer: Joi.string().required(),
+  securityAnswer: Joi.string().required(),
   newPassword: Joi.string().min(6).required()
 });
 
