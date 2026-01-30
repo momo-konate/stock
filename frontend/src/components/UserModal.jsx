@@ -6,7 +6,7 @@ const UserModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
     username: '',
     email: '',
     password: '',
-    role: 'user',
+    role: 'vendeur',
     securityQuestion: 'Quel est le nom de votre premier animal de compagnie ?',
     securityAnswer: ''
   });
@@ -90,8 +90,8 @@ const UserModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               >
-                <option value="user">Vendeur (Accès Standard)</option>
-                <option value="admin">Administrateur (Accès Complet)</option>
+                <option value="vendeur">Vendeur (Accès Standard)</option>
+                <option value="Administrateur">Administrateur (Accès Complet)</option>
               </select>
             </div>
           </div>
