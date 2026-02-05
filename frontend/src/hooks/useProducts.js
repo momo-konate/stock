@@ -6,10 +6,10 @@ export const useProducts = (showToast) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (category = null) => {
     setIsLoading(true);
     try {
-      const { data } = await productService.getAll();
+      const { data } = await productService.getAll(category);
       setProducts(data);
     } catch (error) {
       showToast('Erreur lors de la récupération des produits', 'error');
@@ -18,16 +18,16 @@ export const useProducts = (showToast) => {
     }
   }, [showToast]);
 
-  const handleProductSubmit = async (formData, selectedProduct) => {
+  const handleProductSubmit = useCallback(async (formData, selectedProduct) => {
     setIsSubmitLoading(true);
     try {
       if (selectedProduct) {
         const { data } = await productService.update(selectedProduct.id, formData);
-        setProducts(products.map(p => p.id === data.id ? data : p));
+        setProducts(prev => prev.map(p => p.id === data.id ? data : p));
         showToast('Produit mis à jour');
       } else {
         const { data } = await productService.create(formData);
-        setProducts([data, ...products]);
+        setProducts(prev => [data, ...prev]);
         showToast('Produit ajouté avec succès');
       }
       return true;
@@ -37,13 +37,13 @@ export const useProducts = (showToast) => {
     } finally {
       setIsSubmitLoading(false);
     }
-  };
+  }, [showToast]);
 
-  const handleDeleteProduct = async (id) => {
+  const handleDeleteProduct = useCallback(async (id) => {
     if (window.confirm('Voulez-vous vraiment supprimer ce produit ?')) {
       try {
         await productService.delete(id);
-        setProducts(products.filter(p => p.id !== id));
+        setProducts(prev => prev.filter(p => p.id !== id));
         showToast('Produit supprimé');
         return true;
       } catch (error) {
@@ -52,7 +52,7 @@ export const useProducts = (showToast) => {
       }
     }
     return false;
-  };
+  }, [showToast]);
 
   return {
     products,

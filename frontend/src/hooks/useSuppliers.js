@@ -18,16 +18,16 @@ export const useSuppliers = (showToast) => {
     }
   }, []);
 
-  const handleSupplierSubmit = async (formData, selectedSupplier) => {
+  const handleSupplierSubmit = useCallback(async (formData, selectedSupplier) => {
     setIsSubmitLoading(true);
     try {
       if (selectedSupplier) {
         const { data } = await supplierService.update(selectedSupplier.id, formData);
-        setSuppliers(suppliers.map(s => s.id === data.id ? data : s));
+        setSuppliers(prev => prev.map(s => s.id === data.id ? data : s));
         showToast('Fournisseur mis à jour');
       } else {
         const { data } = await supplierService.create(formData);
-        setSuppliers([data, ...suppliers]);
+        setSuppliers(prev => [data, ...prev]);
         showToast('Fournisseur créé avec succès');
       }
       return true;
@@ -37,13 +37,13 @@ export const useSuppliers = (showToast) => {
     } finally {
       setIsSubmitLoading(false);
     }
-  };
+  }, [showToast]);
 
-  const handleDeleteSupplier = async (id) => {
+  const handleDeleteSupplier = useCallback(async (id) => {
     if (window.confirm('Voulez-vous vraiment supprimer ce fournisseur ?')) {
       try {
         await supplierService.delete(id);
-        setSuppliers(suppliers.filter(s => s.id !== id));
+        setSuppliers(prev => prev.filter(s => s.id !== id));
         showToast('Fournisseur supprimé');
         return true;
       } catch (error) {
@@ -52,7 +52,7 @@ export const useSuppliers = (showToast) => {
       }
     }
     return false;
-  };
+  }, [showToast]);
 
   return {
     suppliers,

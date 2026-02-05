@@ -62,13 +62,15 @@ const SalesList = ({ sales, isLoading, onViewTicket, onDeleteSale, userRole }) =
                     >
                       <Printer size={18} />
                     </button>
-                    <button 
-                      onClick={() => onDeleteSale(sale.id)}
-                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                      title="Supprimer la vente"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    {onDeleteSale && (
+                      <button 
+                        onClick={() => onDeleteSale(sale.id)}
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        title="Supprimer la vente"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

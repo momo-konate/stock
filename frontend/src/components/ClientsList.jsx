@@ -100,21 +100,25 @@ const ClientsList = ({ clients, onEdit, onDelete, onRepay, onCreateClient, onVie
                 Rembourser
               </button>
             )}
-            <button 
-              onClick={() => onEdit(client)}
-              className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all"
-              title="Modifier"
-            >
-              <Edit2 size={18} />
-            </button>
-            <button 
-              onClick={() => onDelete(client.id)}
-              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-              title="Supprimer"
-              disabled={client.totalDebt > 0}
-            >
-              <Trash2 size={18} />
-            </button>
+            {onEdit && (
+              <button 
+                onClick={() => onEdit(client)}
+                className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all"
+                title="Modifier"
+              >
+                <Edit2 size={18} />
+              </button>
+            )}
+            {onDelete && (
+              <button 
+                onClick={() => onDelete(client.id)}
+                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                title="Supprimer"
+                disabled={client.totalDebt > 0}
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
           </div>
         </div>
       ))}

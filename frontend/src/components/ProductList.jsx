@@ -1,4 +1,4 @@
-import React from 'react';
+import CategoryBadge from './CategoryBadge';
 import { Edit2, Trash2, Package, ShoppingBag, RotateCcw } from 'lucide-react';
 
 const ProductList = ({ products, onEdit, onDelete, onSell, onResetStock, isLoading, userRole }) => {
@@ -30,10 +30,8 @@ const ProductList = ({ products, onEdit, onDelete, onSell, onResetStock, isLoadi
         <div key={product.id} className="group bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">
-                  {product.categorie || 'Général'}
-                </span>
+              <div className="mb-2">
+                <CategoryBadge category={product.categorie} />
               </div>
               <h3 className="font-bold text-lg text-slate-900 group-hover:text-primary-600 transition-colors">{product.nom}</h3>
               <p className="text-sm text-slate-500 mt-1 line-clamp-2">{product.description || 'Aucune description'}</p>
@@ -62,14 +60,16 @@ const ProductList = ({ products, onEdit, onDelete, onSell, onResetStock, isLoadi
               <ShoppingBag size={18} className="transition-transform group-hover/btn:scale-110" />
               Vendre
             </button>
-            <button 
-              onClick={() => onEdit(product)}
-              className="p-2.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all"
-              title="Modifier"
-            >
-              <Edit2 size={18} />
-            </button>
-            <>
+            {onEdit && (
+              <button 
+                onClick={() => onEdit(product)}
+                className="p-2.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all"
+                title="Modifier"
+              >
+                <Edit2 size={18} />
+              </button>
+            )}
+            {onResetStock && (
               <button 
                 onClick={() => onResetStock(product.id)}
                 className="p-2.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
@@ -77,6 +77,8 @@ const ProductList = ({ products, onEdit, onDelete, onSell, onResetStock, isLoadi
               >
                 <RotateCcw size={18} />
               </button>
+            )}
+            {onDelete && (
               <button 
                 onClick={() => onDelete(product.id)}
                 className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
@@ -84,7 +86,7 @@ const ProductList = ({ products, onEdit, onDelete, onSell, onResetStock, isLoadi
               >
                 <Trash2 size={18} />
               </button>
-            </>
+            )}
           </div>
         </div>
       ))}

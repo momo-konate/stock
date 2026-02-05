@@ -1,15 +1,35 @@
 import { Product } from '../models/product.model.js';
+import { CATEGORIES } from '../constants/categories.js';
 
 // Récupérer tous les produits
 export const getProducts = async (req, res) => {
   try {
+    const { category } = req.query;
+    const whereClause = { userId: req.ownerId };
+
+    if (category && category !== 'Toutes') {
+      whereClause.categorie = category;
+    }
+
     const products = await Product.findAll({
-      where: { userId: req.ownerId },
+      where: whereClause,
       order: [['createdAt', 'DESC']]
     });
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: 'Erreur lors de la récupération des produits', error: error.message });
+  }
+};
+
+// Récupérer les catégories
+export const getCategories = async (req, res) => {
+  try {
+    // On retourne les constantes définies
+    res.json({
+      all: CATEGORIES
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors de la récupération des catégories', error: error.message });
   }
 };
 
@@ -23,7 +43,7 @@ export const createProduct = async (req, res) => {
       quantite, 
       prix, 
       alertThreshold: alertThreshold || 10,
-      categorie: categorie || 'Général',
+      categorie: categorie || 'Autre',
       userId: req.ownerId 
     });
     res.status(201).json(newProduct);

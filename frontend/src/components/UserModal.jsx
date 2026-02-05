@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { X, User, Mail, Lock, Shield, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, User, Mail, Lock, Shield, ShieldCheck, Edit3 } from 'lucide-react';
 
-const UserModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
+const UserModal = ({ isOpen, user, onClose, onSubmit, isLoading }) => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -11,11 +11,38 @@ const UserModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
     securityAnswer: ''
   });
 
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        username: user.username || '',
+        email: user.email || '',
+        password: '', // On laisse vide car le mot de passe est optionnel à l'édition
+        role: user.role || 'vendeur',
+        securityQuestion: user.securityQuestion || 'Quel est le nom de votre premier animal de compagnie ?',
+        securityAnswer: user.securityAnswer || ''
+      });
+    } else {
+      setFormData({
+        username: '',
+        email: '',
+        password: '',
+        role: 'vendeur',
+        securityQuestion: 'Quel est le nom de votre premier animal de compagnie ?',
+        securityAnswer: ''
+      });
+    }
+  }, [user, isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    // Si on édite, on n'envoie le password que s'il est renseigné
+    const submissionData = { ...formData };
+    if (user && !submissionData.password) {
+      delete submissionData.password;
+    }
+    onSubmit(submissionData);
   };
 
   return (
@@ -29,10 +56,12 @@ const UserModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
             <X size={20} />
           </button>
           <div className="bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/30">
-            <ShieldCheck size={32} />
+            {user ? <Edit3 size={32} /> : <ShieldCheck size={32} />}
           </div>
-          <h2 className="text-2xl font-bold">Nouveau Vendeur</h2>
-          <p className="text-primary-100 text-sm mt-1">Créez un accès pour un membre de votre équipe</p>
+          <h2 className="text-2xl font-bold">{user ? 'Modifier l\'accès' : 'Nouveau Vendeur'}</h2>
+          <p className="text-primary-100 text-sm mt-1">
+            {user ? `Modification du compte de ${user.username}` : 'Créez un accès pour un membre de votre équipe'}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
@@ -67,14 +96,16 @@ const UserModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Mot de passe provisoire</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              {user ? 'Changer le mot de passe (optionnel)' : 'Mot de passe provisoire'}
+            </label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 text-slate-400" size={18} />
               <input
                 type="password"
-                required
+                required={!user}
                 className="input pl-10 w-full rounded-xl border-slate-200 focus:ring-2 focus:ring-primary-500"
-                placeholder="••••••••"
+                placeholder={user ? "Laisser vide pour ne pas changer" : "••••••••"}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
@@ -101,7 +132,7 @@ const UserModal = ({ isOpen, onClose, onSubmit, isLoading }) => {
             disabled={isLoading}
             className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary-500/25 transition-all disabled:opacity-50 mt-4"
           >
-            {isLoading ? 'Création...' : 'Créer le compte'}
+            {isLoading ? (user ? 'Mise à jour...' : 'Création...') : (user ? 'Enregistrer les changements' : 'Créer le compte')}
           </button>
         </form>
       </div>

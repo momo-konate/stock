@@ -1,24 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
-const CATEGORIES = [
-  'Général',
-  'Boissons',
-  'Alimentation',
-  'Électronique',
-  'Vêtements',
-  'Hygiène',
-  'Divertissement',
-  'Autre'
-];
-
-const ProductForm = ({ product, onSubmit, onCancel, isLoading }) => {
+const ProductForm = ({ product, categories, onSubmit, onCancel, isLoading }) => {
   const [formData, setFormData] = useState({
     nom: '',
     description: '',
     quantite: 0,
     prix: 0,
     alertThreshold: 10,
-    categorie: 'Général'
+    categorie: categories?.[0]?.nom || 'Général'
   });
 
   useEffect(() => {
@@ -71,9 +60,10 @@ const ProductForm = ({ product, onSubmit, onCancel, isLoading }) => {
           className="input bg-white"
           required
         >
-          {CATEGORIES.map(cat => (
-            <option key={cat} value={cat}>{cat}</option>
+          {categories.map(cat => (
+            <option key={cat.id || cat.nom} value={cat.nom}>{cat.nom}</option>
           ))}
+          {categories.length === 0 && <option value="Général">Général</option>}
         </select>
       </div>
 

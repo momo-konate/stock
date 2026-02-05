@@ -14,13 +14,13 @@ import { useClients } from './hooks/useClients';
 import { useAppSystem } from './hooks/useAppSystem';
 import { useUsers } from './hooks/useUsers';
 import { useSuppliers } from './hooks/useSuppliers';
-import ProductList from './components/ProductList';
+import { useCategories } from './hooks/useCategories';
 import ProductForm from './components/ProductForm';
-import SalesList from './components/SalesList';
 import SaleForm from './components/SaleForm';
 import Receipt from './components/Receipt';
 import Modal from './components/Modal';
 import SalesChart from './components/SalesChart';
+import SalesList from './components/SalesList';
 import UsersList from './components/UsersList';
 import UserModal from './components/UserModal';
 import ShopSettings from './components/ShopSettings';
@@ -31,12 +31,19 @@ import ImageViewer from './components/ImageViewer';
 import ClientHistoryModal from './components/ClientHistoryModal';
 import SuppliersList from './components/SuppliersList';
 import SupplierForm from './components/SupplierForm';
+import CategoryManager from './components/CategoryManager';
+import InventoryTab from './components/InventoryTab';
+import SalesTab from './components/SalesTab';
+import ExpensesTab from './components/ExpensesTab';
+import ClientsTab from './components/ClientsTab';
+import SuppliersTab from './components/SuppliersTab';
 import * as XLSX from 'xlsx';
 import { 
-  Plus, LayoutDashboard, Database, AlertCircle, CheckCircle2, ShoppingCart, 
-  History, LogOut, User as UserIcon, Trash2, Wallet, Printer, 
-  FileSpreadsheet, BarChart3, UserCircle, Shield, Settings, Users, Phone, TrendingUp, Truck, Menu, X
+  AlertCircle, CheckCircle2, ShoppingCart, 
+  Trash2, UserCircle, Settings, Users, Phone, TrendingUp, Truck, Menu, X, HelpCircle,
+  Printer, Wallet, History, Plus
 } from 'lucide-react';
+import Sidebar from './components/Sidebar';
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -68,7 +75,7 @@ const Dashboard = () => {
   
   const { 
     sales, deletedSales, isLoading: isSalesLoading, isSubmitLoading: isSaleSubmitLoading, 
-    viewingSale, isReceiptModalOpen, setIsReceiptModalOpen, 
+    viewingSale, setViewingSale, isReceiptModalOpen, setIsReceiptModalOpen, 
     fetchSales, fetchDeletedSales, handleSaleSubmit, handleQuickSale, handleDeleteSale, handleDeleteAllSales 
   } = useSales(showToast, fetchClients, setProducts);
 
@@ -79,9 +86,10 @@ const Dashboard = () => {
 
   const { users, isSubmitLoading: isUserSubmitLoading, fetchUsers, handleUserSubmit, handleDeleteUser } = useUsers(showToast);
   const { suppliers, isLoading: isSuppliersLoading, isSubmitLoading: isSupplierSubmitLoading, fetchSuppliers, handleSupplierSubmit, handleDeleteSupplier } = useSuppliers(showToast);
+  const { categories, isLoading: isCategoriesLoading, isSubmitLoading: isCategorySubmitLoading, fetchCategories, handleCategorySubmit, handleDeleteCategory } = useCategories(showToast);
 
-  const isLoading = isProductsLoading || isSalesLoading || isClientsLoading || isSystemLoading || isSuppliersLoading;
-  const isSubmitLoading = isProductSubmitLoading || isSaleSubmitLoading || isClientSubmitLoading || isSystemSubmitLoading || isUserSubmitLoading || isSupplierSubmitLoading;
+  const isLoading = isProductsLoading || isSalesLoading || isClientsLoading || isSystemLoading || isSuppliersLoading || isCategoriesLoading;
+  const isSubmitLoading = isProductSubmitLoading || isSaleSubmitLoading || isClientSubmitLoading || isSystemSubmitLoading || isUserSubmitLoading || isSupplierSubmitLoading || isCategorySubmitLoading;
 
   // Modal States
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -92,25 +100,41 @@ const Dashboard = () => {
   const [isRepaymentModalOpen, setIsRepaymentModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isClientHelpModalOpen, setIsClientHelpModalOpen] = useState(false);
   
-  const [selectedCategory, setSelectedCategory] = useState('Tous');
+  const [selectedCategory, setSelectedCategory] = useState('Toutes');
+  const [selectedUser, setSelectedUser] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [idPreviewPhoto, setIdPreviewPhoto] = useState(null);
 
+  // Effect to fetch products and sales when selectedCategory changes
   useEffect(() => {
+    if (user) {
+      const categoryName = selectedCategory === 'Toutes' ? null : selectedCategory;
+      fetchProducts(categoryName);
+      fetchSales(categoryName);
+    }
+  }, [selectedCategory, user, fetchProducts, fetchSales]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    
     fetchProducts();
     fetchSales();
     fetchExpenses();
     fetchShopSettings();
     fetchClients();
     fetchSuppliers();
+    fetchCategories();
     if (user?.role === 'admin') { 
       fetchDeletedSales();
       fetchUsers();
     }
-  }, [user, fetchProducts, fetchSales, fetchExpenses, fetchShopSettings, fetchClients, fetchDeletedSales, fetchUsers, fetchSuppliers]);
+  }, [user?.id, fetchProducts, fetchSales, fetchExpenses, fetchShopSettings, fetchClients, fetchDeletedSales, fetchUsers, fetchSuppliers, fetchCategories]);
 
   useEffect(() => {
     if (activeTab === 'trash') {
@@ -127,7 +151,10 @@ const Dashboard = () => {
   const handleEditClient = (client) => { setSelectedClient(client); setIsClientModalOpen(true); };
   const handleCreateClient = () => { setSelectedClient(null); setIsClientModalOpen(true); };
   const handleRepayClientClick = (client) => { setSelectedClient(client); setIsRepaymentModalOpen(true); };
-  const handleCreateUser = () => setIsUserModalOpen(true);
+  const handleCreateUser = (userToEdit = null) => {
+    setSelectedUser(userToEdit);
+    setIsUserModalOpen(true);
+  };
   const handleEditSupplier = (supplier) => { setSelectedSupplier(supplier); setIsSupplierModalOpen(true); };
   const handleCreateSupplier = () => { setSelectedSupplier(null); setIsSupplierModalOpen(true); };
 
@@ -148,7 +175,7 @@ const Dashboard = () => {
   };
 
   const onUserSubmit = async (formData) => {
-    if (await handleUserSubmit(formData)) setIsUserModalOpen(false);
+    if (await handleUserSubmit(formData, selectedUser)) setIsUserModalOpen(false);
   };
 
   const onSupplierSubmit = async (formData) => {
@@ -210,488 +237,63 @@ const Dashboard = () => {
         </div>
       )}
 
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-2">
-              <div className="bg-primary-600 p-2 rounded-lg text-white">
-                <Database size={24} />
-              </div>
-              <span className="text-xl font-bold text-slate-900 tracking-tight">StockPro</span>
-            </div>
-            
-            {/* Menu Desktop */}
-            <div className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-              <button 
-                onClick={() => setActiveTab('inventory')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === 'inventory' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                Stock
-              </button>
-              <button 
-                onClick={() => setActiveTab('sales')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === 'sales' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                Ventes
-              </button>
-              <button 
-                onClick={() => setActiveTab('expenses')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                  activeTab === 'expenses' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                <Wallet size={16} />
-                Caisse
-              </button>
-              <button 
-                onClick={() => setActiveTab('clients')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                  activeTab === 'clients' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                <Users size={16} />
-                Clients
-              </button>
-              <button 
-                onClick={() => setActiveTab('suppliers')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                  activeTab === 'suppliers' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                <Truck size={16} />
-                Fournisseurs
-              </button>
-              {user?.role === 'admin' && (
-                <button 
-                  onClick={() => setActiveTab('trash')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                    activeTab === 'trash' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  <Trash2 size={16} />
-                  Corbeille
-                </button>
-              )}
-              {user?.role === 'admin' && (
-                <button 
-                  onClick={() => setActiveTab('users')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                    activeTab === 'users' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  <UserCircle size={16} />
-                  Personnel
-                </button>
-              )}
-              {user?.role === 'admin' && (
-                <button 
-                  onClick={() => setActiveTab('settings')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                    activeTab === 'settings' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  <Settings size={16} />
-                  Réglages
-                </button>
-              )}
-            </div>
-
-            {/* Bouton Menu Mobile */}
-            <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 text-slate-600 hover:text-primary-600 transition-colors"
-              aria-label="Menu"
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-
-            {/* Info Utilisateur Desktop */}
-            <div className="hidden md:flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="bg-slate-200 p-1 rounded-full">
-                  <UserIcon size={14} className="text-slate-600" />
-                </div>
-                <span className="text-xs font-bold text-slate-700">{user?.username}</span>
-                {user?.role === 'admin' && (
-                  <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 text-[10px] font-black rounded uppercase">Admin</span>
-                )}
-              </div>
-              <button 
-                onClick={() => {
-                  if (window.confirm('Voulez-vous vraiment vous déconnecter ?')) {
-                    logout();
-                  }
-                }}
-                className="p-2 text-slate-400 hover:text-red-600 transition-colors"
-                title="Déconnexion"
-              >
-                <LogOut size={20} />
-              </button>
-            </div>
-          </div>
-
-          {/* Menu Mobile Déroulant */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden border-t border-slate-200 py-4 space-y-2 animate-in slide-in-from-top duration-200">
-              <button 
-                onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === 'inventory' ? 'bg-primary-50 text-primary-600 border-l-4 border-primary-600' : 'text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                Stock
-              </button>
-              <button 
-                onClick={() => { setActiveTab('sales'); setIsMobileMenuOpen(false); }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === 'sales' ? 'bg-emerald-50 text-emerald-600 border-l-4 border-emerald-600' : 'text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                Ventes
-              </button>
-              <button 
-                onClick={() => { setActiveTab('expenses'); setIsMobileMenuOpen(false); }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                  activeTab === 'expenses' ? 'bg-violet-50 text-violet-600 border-l-4 border-violet-600' : 'text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <Wallet size={16} />
-                Caisse
-              </button>
-              <button 
-                onClick={() => { setActiveTab('clients'); setIsMobileMenuOpen(false); }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                  activeTab === 'clients' ? 'bg-primary-50 text-primary-600 border-l-4 border-primary-600' : 'text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <Users size={16} />
-                Clients
-              </button>
-              <button 
-                onClick={() => { setActiveTab('suppliers'); setIsMobileMenuOpen(false); }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                  activeTab === 'suppliers' ? 'bg-amber-50 text-amber-600 border-l-4 border-amber-600' : 'text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <Truck size={16} />
-                Fournisseurs
-              </button>
-              {user?.role === 'admin' && (
-                <button 
-                  onClick={() => { setActiveTab('trash'); setIsMobileMenuOpen(false); }}
-                  className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                    activeTab === 'trash' ? 'bg-red-50 text-red-600 border-l-4 border-red-600' : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  <Trash2 size={16} />
-                  Corbeille
-                </button>
-              )}
-              {user?.role === 'admin' && (
-                <button 
-                  onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }}
-                  className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                    activeTab === 'users' ? 'bg-emerald-50 text-emerald-600 border-l-4 border-emerald-600' : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  <UserCircle size={16} />
-                  Personnel
-                </button>
-              )}
-              {user?.role === 'admin' && (
-                <button 
-                  onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }}
-                  className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                    activeTab === 'settings' ? 'bg-slate-50 text-slate-900 border-l-4 border-slate-900' : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  <Settings size={16} />
-                  Réglages
-                </button>
-              )}
-              
-              {/* Info utilisateur et déconnexion en mobile */}
-              <div className="border-t border-slate-200 pt-4 mt-4">
-                <div className="flex items-center justify-between px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-slate-200 p-1.5 rounded-full">
-                      <UserIcon size={16} className="text-slate-600" />
-                    </div>
-                    <div>
-                      <span className="text-sm font-bold text-slate-700">{user?.username}</span>
-                      {user?.role === 'admin' && (
-                        <span className="ml-2 px-1.5 py-0.5 bg-primary-100 text-primary-700 text-[10px] font-black rounded uppercase">Admin</span>
-                      )}
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      if (window.confirm('Voulez-vous vraiment vous déconnecter ?')) {
-                        logout();
-                      }
-                    }}
-                    className="p-2 text-slate-400 hover:text-red-600 transition-colors"
-                    title="Déconnexion"
-                  >
-                    <LogOut size={20} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </nav>
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab}
+        user={user}
+        logout={logout}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full">
         {activeTab === 'inventory' && (
-          <>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Gestion du Stock</h1>
-                <p className="text-slate-500 mt-1">Gérez vos produits et surveillez vos niveaux de stock.</p>
-              </div>
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setIsSaleModalOpen(true)}
-                  className="btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-500/20"
-                >
-                  <ShoppingCart size={20} />
-                  Faire une vente
-                </button>
-                <button 
-                  onClick={handleCreateProduct}
-                  className="btn btn-primary shadow-primary-500/25 shadow-lg"
-                >
-                  <Plus size={20} />
-                  Ajouter un produit
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-              {['Tous', 'Boissons', 'Alimentation', 'Électronique', 'Vêtements', 'Hygiène', 'Divertissement', 'Général', 'Autre'].map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                    selectedCategory === cat 
-                      ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30 ring-2 ring-primary-500/20' 
-                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            {hasLowStock && (
-              <div className="mb-6 bg-red-600 border-l-8 border-red-900 p-5 rounded-xl flex items-center gap-4 animate-bounce-short shadow-xl shadow-red-500/40">
-                <div className="bg-white p-2 rounded-full shadow-inner">
-                  <AlertCircle className="text-red-600" size={28} />
-                </div>
-                <div>
-                  <p className="text-white text-lg font-black uppercase tracking-wider">Alerte Critique : Stock Insuffisant !</p>
-                  <p className="text-red-50 text-sm font-medium">Certains articles sont tombés sous leur seuil de sécurité respectif. Réapprovisionnez immédiatement.</p>
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-              <div className="card p-6 bg-white">
-                <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Produits</p>
-                <p className="text-3xl font-bold text-slate-900 mt-2">{products.length}</p>
-              </div>
-              <div className="card p-6 bg-white border-l-4 border-l-primary-500">
-                <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Valeur Inventaire</p>
-                <p className="text-3xl font-bold text-slate-900 mt-2">
-                  {totalStockValue.toLocaleString('fr-FR')} <span className="text-lg">FCFA</span>
-                </p>
-              </div>
-              <div className={`card p-6 border-l-8 transition-all duration-500 ${
-                hasLowStock 
-                ? 'bg-red-50 border-red-600 animate-pulse shadow-lg ring-2 ring-red-600/20' 
-                : 'bg-white border-amber-500'
-              }`}>
-                <p className={`text-sm font-bold uppercase tracking-wider ${hasLowStock ? 'text-red-600' : 'text-slate-500'}`}>
-                  Alerte Stock
-                </p>
-                <p className={`text-3xl font-black mt-2 ${hasLowStock ? 'text-red-700' : 'text-slate-900'}`}>
-                  {lowStockCount}
-                </p>
-              </div>
-            </div>
-
-            <ProductList 
-              products={products.filter(p => selectedCategory === 'Tous' || p.categorie === selectedCategory)} 
-              onEdit={handleEditProduct} 
-              onDelete={handleDeleteProduct}
-              onSell={handleQuickSale}
-              onResetStock={handleResetStock}
-              isLoading={isLoading}
-              userRole={user?.role}
-            />
-          </>
+          <InventoryTab 
+            products={products}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            hasLowStock={hasLowStock}
+            lowStockCount={lowStockCount}
+            totalStockValue={totalStockValue}
+            handleCreateProduct={handleCreateProduct}
+            handleEditProduct={handleEditProduct}
+            handleDeleteProduct={handleDeleteProduct}
+            handleQuickSale={handleQuickSale}
+            handleResetStock={handleResetStock}
+            setIsSaleModalOpen={setIsSaleModalOpen}
+            setIsCategoryModalOpen={setIsCategoryModalOpen}
+            setIsHelpModalOpen={setIsHelpModalOpen}
+            isLoading={isLoading}
+            userRole={user?.role}
+          />
         )}
         
         {activeTab === 'sales' && (
-          <>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Historique des Ventes</h1>
-                <p className="text-slate-500 mt-1">Suivez vos transactions et votre chiffre d'affaires.</p>
-              </div>
-              <div className="flex gap-3">
-                <button 
-                  onClick={handleExportExcel}
-                  className="btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:text-emerald-700 shadow-sm"
-                >
-                  <FileSpreadsheet size={20} className="text-emerald-600" />
-                  Excel
-                </button>
-                {sales.length > 0 && (
-                  <button 
-                    onClick={handleDeleteAllSales}
-                    className="btn btn-secondary border-red-200 text-red-600 hover:bg-red-50"
-                  >
-                    Vider l'historique
-                  </button>
-                )}
-                <button 
-                  onClick={() => setIsSaleModalOpen(true)}
-                  className="btn bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-500/20"
-                >
-                  <ShoppingCart size={20} />
-                  Nouvelle Vente
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-              {/* Stats Cards Column */}
-              <div className="lg:col-span-1 space-y-6">
-                 <div className="card p-6 bg-emerald-600 text-white">
-                  <p className="text-sm font-medium text-emerald-100 uppercase tracking-wider">Chiffre d'Affaires Total</p>
-                  <p className="text-3xl font-bold mt-2">
-                    {totalSalesValue.toLocaleString('fr-FR')} <span className="text-lg font-normal">FCFA</span>
-                  </p>
-                </div>
-                <div className="card p-6 bg-white flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Nombre de Ventes</p>
-                    <p className="text-3xl font-bold text-slate-900 mt-2">{sales.length}</p>
-                  </div>
-                  <div className="bg-emerald-100 p-4 rounded-full text-emerald-600">
-                    <TrendingUp size={32} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Chart Column */}
-              <div className="lg:col-span-2">
-                <SalesChart sales={sales} />
-              </div>
-            </div>
-
-            <SalesList 
-              sales={sales} 
-              isLoading={isLoading} 
-              onViewTicket={(sale) => {
-                setViewingSale(sale);
-                setIsReceiptModalOpen(true);
-              }}
-              onDeleteSale={handleDeleteSale}
-              userRole={user?.role}
-            />
-          </>
+          <SalesTab 
+            sales={sales}
+            handleExportExcel={handleExportExcel}
+            handleDeleteAllSales={handleDeleteAllSales}
+            setIsSaleModalOpen={setIsSaleModalOpen}
+            onDeleteSale={(id) => handleDeleteSale(id, products)}
+            isLoading={isLoading}
+            user={user}
+            setViewingSale={setViewingSale}
+            setIsReceiptModalOpen={setIsReceiptModalOpen}
+          />
         )}
 
         {activeTab === 'expenses' && (
-          <>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Journal de Caisse</h1>
-                <p className="text-slate-500 mt-1">Suivez les entrées et sorties d'argent.</p>
-              </div>
-              <button 
-                onClick={() => setIsExpenseModalOpen(true)}
-                className="btn bg-violet-600 text-white hover:bg-violet-700 shadow-lg shadow-violet-500/20"
-              >
-                <Plus size={20} />
-                Nouvelle Dépense
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-              <div className="card p-6 bg-white">
-                <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Ventes (Entrées)</p>
-                <p className="text-2xl font-bold text-emerald-600 mt-2">
-                  + {totalSalesValue.toLocaleString('fr-FR')} FCFA
-                </p>
-              </div>
-              <div className="card p-6 bg-white">
-                <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Dépenses (Sorties)</p>
-                <p className="text-2xl font-bold text-red-600 mt-2">
-                  - {totalExpensesValue.toLocaleString('fr-FR')} FCFA
-                </p>
-              </div>
-              <div className={`card p-6 ${netBalance >= 0 ? 'bg-emerald-600' : 'bg-red-600'} text-white`}>
-                <p className="text-sm font-medium text-white/80 uppercase tracking-wider">Solde Net en Caisse</p>
-                <p className="text-3xl font-bold mt-2">
-                  {netBalance.toLocaleString('fr-FR')} <span className="text-lg font-normal">FCFA</span>
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Description</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Montant</th>
-                      {user?.role === 'admin' && <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {expenses.map((expense) => (
-                      <tr key={expense.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 text-sm text-slate-500">
-                          {new Date(expense.date).toLocaleString('fr-FR')}
-                        </td>
-                        <td className="px-6 py-4 text-sm font-medium text-slate-900">{expense.description}</td>
-                        <td className="px-6 py-4 text-sm font-bold text-red-600">
-                          - {expense.amount.toLocaleString('fr-FR')} FCFA
-                        </td>
-                        {user?.role === 'admin' && (
-                          <td className="px-6 py-4">
-                            <button 
-                              onClick={() => handleDeleteExpense(expense.id)}
-                              className="text-slate-400 hover:text-red-600 transition-colors"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                    {expenses.length === 0 && (
-                      <tr>
-                        <td colSpan="4" className="px-6 py-12 text-center text-slate-400">
-                          <Wallet size={48} className="mx-auto mb-3 opacity-20" />
-                          <p>Aucune dépense enregistrée.</p>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </>
+          <ExpensesTab 
+            expenses={expenses}
+            totalSalesValue={totalSalesValue}
+            totalExpensesValue={totalExpensesValue}
+            netBalance={netBalance}
+            setIsExpenseModalOpen={setIsExpenseModalOpen}
+            handleDeleteExpense={handleDeleteExpense}
+            user={user}
+            isSubmitLoading={isSubmitLoading}
+          />
         )}
 
         {activeTab === 'trash' && (
@@ -724,63 +326,28 @@ const Dashboard = () => {
         )}
 
         {activeTab === 'suppliers' && (
-          <>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Gestion des Fournisseurs</h1>
-                <p className="text-slate-500 mt-1">Gérez vos sources d'approvisionnement et contacts.</p>
-              </div>
-              <button 
-                onClick={handleCreateSupplier}
-                className="btn bg-amber-600 text-white hover:bg-amber-700 shadow-lg shadow-amber-500/20"
-              >
-                <Plus size={20} />
-                Ajouter un fournisseur
-              </button>
-            </div>
-            <SuppliersList 
-              suppliers={suppliers}
-              onEdit={handleEditSupplier}
-              onDelete={handleDeleteSupplier}
-              onCreateSupplier={handleCreateSupplier}
-              isLoading={isLoading}
-            />
-          </>
+          <SuppliersTab 
+            suppliers={suppliers}
+            handleCreateSupplier={handleCreateSupplier}
+            handleEditSupplier={handleEditSupplier}
+            handleDeleteSupplier={handleDeleteSupplier}
+            isLoading={isLoading}
+          />
         )}
 
         {activeTab === 'clients' && (
-          <>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Gestion des Clients</h1>
-                <p className="text-slate-500 mt-1">Suivez les dettes et les remboursements de vos clients.</p>
-              </div>
-              <button 
-                onClick={handleCreateClient}
-                className="btn btn-primary shadow-primary-500/25 shadow-lg"
-              >
-                <Plus size={20} />
-                Nouveau Client
-              </button>
-            </div>
-
-            <ClientsList 
-              clients={clients} 
-              onEdit={handleEditClient} 
-              onDelete={handleDeleteClient}
-              onRepay={handleRepayClientClick}
-              onCreateClient={handleCreateClient}
-              onViewID={(idPhoto, client) => {
-                setSelectedClient(client);
-                setIdPreviewPhoto(idPhoto);
-              }}
-              onHistory={(client) => {
-                setSelectedClient(client);
-                setIsHistoryModalOpen(true);
-              }}
-              isLoading={isLoading}
-            />
-          </>
+          <ClientsTab 
+            clients={clients}
+            handleCreateClient={handleCreateClient}
+            handleEditClient={handleEditClient}
+            handleDeleteClient={handleDeleteClient}
+            handleRepayClientClick={handleRepayClientClick}
+            setIsClientHelpModalOpen={setIsClientHelpModalOpen}
+            setSelectedClient={setSelectedClient}
+            setIdPreviewPhoto={setIdPreviewPhoto}
+            setIsHistoryModalOpen={setIsHistoryModalOpen}
+            isLoading={isLoading}
+          />
         )}
       </main>
 
@@ -792,6 +359,7 @@ const Dashboard = () => {
       >
         <ProductForm 
           product={selectedProduct}
+          categories={categories}
           onSubmit={onProductSubmit}
           onCancel={() => setIsProductModalOpen(false)}
           isLoading={isSubmitLoading}
@@ -922,10 +490,123 @@ const Dashboard = () => {
 
       <UserModal 
         isOpen={isUserModalOpen}
+        user={selectedUser}
         onClose={() => setIsUserModalOpen(false)}
         onSubmit={onUserSubmit}
         isLoading={isSubmitLoading}
       />
+
+      <Modal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        title="Gestion des Catégories"
+      >
+        <CategoryManager
+          categories={categories}
+          onAdd={handleCategorySubmit}
+          onUpdate={handleCategorySubmit}
+          onDelete={handleDeleteCategory}
+          isLoading={isCategorySubmitLoading}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
+        title="Comment utiliser StockPro ? 🚀"
+      >
+        <div className="space-y-6">
+          <div className="flex gap-4">
+            <div className="bg-primary-100 text-primary-600 p-3 rounded-full h-fit">
+              <Plus size={24} />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900">1. Remplissez votre Stock</h4>
+              <p className="text-sm text-slate-500">Allez dans "Ajouter un produit" pour enregistrer vos articles avec leur prix et quantité.</p>
+            </div>
+          </div>
+
+          <div className="flex gap-4">
+            <div className="bg-emerald-100 text-emerald-600 p-3 rounded-full h-fit">
+              <ShoppingCart size={24} />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900">2. Faites une Vente</h4>
+              <p className="text-sm text-slate-500">Cliquez sur "Faire une vente". Le stock diminuera tout seul et l'argent ira dans votre caisse.</p>
+            </div>
+          </div>
+
+          <div className="flex gap-4">
+            <div className="bg-violet-100 text-violet-600 p-3 rounded-full h-fit">
+              <Wallet size={24} />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900">3. Surveillez la Caisse</h4>
+              <p className="text-sm text-slate-500">L'onglet "Caisse" vous montre vos bénéfices après avoir soustrait vos dépenses.</p>
+            </div>
+          </div>
+
+          <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
+            <p className="text-xs text-amber-800 font-medium">💡 Astuce : Si un produit devient rouge, c'est qu'il est temps d'en racheter !</p>
+          </div>
+
+          <button 
+            onClick={() => setIsHelpModalOpen(false)}
+            className="w-full btn btn-primary py-3"
+          >
+            J'ai compris, c'est parti !
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isClientHelpModalOpen}
+        onClose={() => setIsClientHelpModalOpen(false)}
+        title="Gérer vos Clients & Dettes 🤝"
+      >
+        <div className="space-y-6">
+          <div className="flex gap-4">
+            <div className="bg-primary-100 text-primary-600 p-3 rounded-full h-fit">
+              <UserCircle size={24} />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900">1. Enregistrez vos Clients</h4>
+              <p className="text-sm text-slate-500">Ajoutez vos clients réguliers pour pouvoir leur vendre à crédit.</p>
+            </div>
+          </div>
+
+          <div className="flex gap-4">
+            <div className="bg-red-100 text-red-600 p-3 rounded-full h-fit">
+              <TrendingUp size={24} />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900">2. Suivez les Dettes</h4>
+              <p className="text-sm text-slate-500">Lors d'une vente, choisissez "Dette". Elle apparaîtra automatiquement sur la fiche du client.</p>
+            </div>
+          </div>
+
+          <div className="flex gap-4">
+            <div className="bg-emerald-100 text-emerald-600 p-3 rounded-full h-fit">
+              <History size={24} />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900">3. Remboursements</h4>
+              <p className="text-sm text-slate-500">Cliquez sur l'icône de billet (💸) pour enregistrer un paiement et réduire la dette.</p>
+            </div>
+          </div>
+
+          <div className="p-4 bg-primary-50 border border-primary-100 rounded-xl">
+            <p className="text-xs text-primary-800 font-medium">📜 Astuce : Utilisez le bouton "Historique" pour voir tous les détails d'un client.</p>
+          </div>
+
+          <button 
+            onClick={() => setIsClientHelpModalOpen(false)}
+            className="w-full btn btn-primary py-3"
+          >
+            Compris !
+          </button>
+        </div>
+      </Modal>
 
       <footer className="py-8 text-center text-slate-400 text-sm border-t border-slate-200 bg-white mt-auto">
         &copy; 2026 StockPro Management System. Tous droits réservés.

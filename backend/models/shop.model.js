@@ -34,3 +34,4 @@ export const Shop = sequelize.define('Shop', {
     }
   }
 });
+

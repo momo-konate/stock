@@ -21,31 +21,31 @@ export const useAppSystem = (showToast) => {
     } catch (error) {}
   }, []);
 
-  const handleExpenseSubmit = async (formData) => {
+  const handleExpenseSubmit = useCallback(async (formData) => {
     try {
       const { data } = await expenseService.create(formData);
-      setExpenses([data, ...expenses]);
+      setExpenses(prev => [data, ...prev]);
       showToast('Dépense enregistrée');
       return true;
     } catch (error) {
       showToast('Erreur lors de l\'enregistrement de la dépense', 'error');
       return false;
     }
-  };
+  }, [showToast]);
 
-  const handleDeleteExpense = async (id) => {
+  const handleDeleteExpense = useCallback(async (id) => {
     try {
       await expenseService.delete(id);
-      setExpenses(expenses.filter(e => e.id !== id));
+      setExpenses(prev => prev.filter(e => e.id !== id));
       showToast('Dépense supprimée');
       return true;
     } catch (error) {
       showToast('Erreur lors de la suppression', 'error');
       return false;
     }
-  };
+  }, [showToast]);
 
-  const handleShopUpdate = async (formData) => {
+  const handleShopUpdate = useCallback(async (formData) => {
     try {
       const { data } = await shopService.update(formData);
       setShop(data);
@@ -55,7 +55,7 @@ export const useAppSystem = (showToast) => {
       showToast('Erreur lors de la mise à jour des paramètres', 'error');
       return false;
     }
-  };
+  }, [showToast]);
 
   return {
     expenses,

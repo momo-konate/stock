@@ -8,8 +8,20 @@ import { Op } from 'sequelize';
 // Récupérer toutes les ventes pour l'utilisateur
 export const getSales = async (req, res) => {
   try {
+    const { category } = req.query;
+    const whereSale = { userId: req.ownerId };
+    const includeProduct = {
+      model: Product,
+      as: 'product'
+    };
+
+    if (category && category !== 'Toutes') {
+      includeProduct.where = { categorie: category };
+    }
+
     const sales = await Sale.findAll({
-      where: { userId: req.ownerId },
+      where: whereSale,
+      include: [includeProduct],
       order: [['createdAt', 'DESC']]
     });
     res.json(sales);

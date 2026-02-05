@@ -9,10 +9,10 @@ export const useSales = (showToast, fetchClients, setProducts) => {
   const [viewingSale, setViewingSale] = useState(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
-  const fetchSales = useCallback(async () => {
+  const fetchSales = useCallback(async (category = null) => {
     setIsLoading(true);
     try {
-      const { data } = await saleService.getAll();
+      const { data } = await saleService.getAll(category);
       setSales(data);
     } catch (error) {
     } finally {
@@ -31,7 +31,7 @@ export const useSales = (showToast, fetchClients, setProducts) => {
     }
   }, []);
 
-  const handleSaleSubmit = async (formData, products) => {
+  const handleSaleSubmit = useCallback(async (formData, products) => {
     setIsSubmitLoading(true);
     try {
       const { data } = await saleService.create(formData);
@@ -60,9 +60,9 @@ export const useSales = (showToast, fetchClients, setProducts) => {
     } finally {
       setIsSubmitLoading(false);
     }
-  };
+  }, [fetchClients, setProducts, showToast]);
 
-  const handleQuickSale = async (product) => {
+  const handleQuickSale = useCallback(async (product) => {
     if (product.quantite <= 0) {
       showToast('Stock épuisé pour ce produit', 'error');
       return false;
@@ -98,9 +98,9 @@ export const useSales = (showToast, fetchClients, setProducts) => {
     } finally {
       setIsSubmitLoading(false);
     }
-  };
+  }, [setProducts, showToast]);
 
-  const handleDeleteSale = async (id, products) => {
+  const handleDeleteSale = useCallback(async (id, products) => {
     if (window.confirm('Voulez-vous vraiment supprimer cette vente ? Le stock sera restauré.')) {
       try {
         await saleService.delete(id);
@@ -121,9 +121,9 @@ export const useSales = (showToast, fetchClients, setProducts) => {
       }
     }
     return false;
-  };
+  }, [sales, setProducts, showToast]);
 
-  const handleDeleteAllSales = async () => {
+  const handleDeleteAllSales = useCallback(async () => {
     if (window.confirm('Voulez-vous vraiment vider tout l\'historique des ventes ? Cette action est irréversible.')) {
       try {
         await saleService.deleteAll();
@@ -136,13 +136,14 @@ export const useSales = (showToast, fetchClients, setProducts) => {
       }
     }
     return false;
-  };
+  }, [showToast]);
 
   return {
     sales,
     deletedSales,
     isSubmitLoading,
     viewingSale,
+    setViewingSale,
     isReceiptModalOpen,
     setIsReceiptModalOpen,
     fetchSales,

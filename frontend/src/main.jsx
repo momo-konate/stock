@@ -9,11 +9,12 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>,
 )
 
-// Service Worker Registration
+// Force unregister all service workers to resolve network issues
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('SW Registered!', reg))
-      .catch(err => console.log('SW Reg error:', err));
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      registration.unregister();
+      console.log('SW Unregistered for stability');
+    }
   });
 }

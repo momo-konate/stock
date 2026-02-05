@@ -47,3 +47,50 @@
     @apply w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all duration-200;
   }
 }
+
+/* Category Filters */
+.category-filter-container {
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: none;
+}
+
+.category-filter-container::-webkit-scrollbar {
+  display: none;
+}
+
+.category-filter-chips {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.25rem;
+}
+
+.category-chip {
+  padding: 0.6rem 1.25rem;
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.category-chip:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.category-chip.active {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+}

@@ -172,3 +172,47 @@ export const deleteUser = async (req, res) => {
       .json({ message: "Erreur lors de la suppression", error: error.message });
   }
 };
+
+export const getMe = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: ["id", "username", "email", "role", "createdAt"],
+    });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
+export const updateUser = async (req, res) => {
+  try {
+    const { username, email, role, password } = req.body;
+    const user = await User.findOne({
+      where: { id: req.params.id, parentId: req.user.id },
+    });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "Utilisateur non trouvé ou non autorisé" });
+    }
+
+    const updateData = { username, email, role };
+    if (password) {
+      updateData.password = password;
+    }
+
+    await user.update(updateData);
+    
+    res.json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la mise à jour", error: error.message });
+  }
+};

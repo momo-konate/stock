@@ -15,15 +15,15 @@ export const useClients = (showToast) => {
     }
   }, []);
 
-  const handleClientSubmit = async (formData, selectedClient) => {
+  const handleClientSubmit = useCallback(async (formData, selectedClient) => {
     try {
       if (selectedClient) {
         const { data } = await clientService.update(selectedClient.id, formData);
-        setClients(clients.map(c => c.id === data.id ? data : c));
+        setClients(prev => prev.map(c => c.id === data.id ? data : c));
         showToast('Client mis à jour');
       } else {
         const { data } = await clientService.create(formData);
-        setClients([data, ...clients]);
+        setClients(prev => [data, ...prev]);
         showToast('Client créé avec succès');
       }
       return true;
@@ -31,13 +31,13 @@ export const useClients = (showToast) => {
       showToast('Erreur lors de l\'enregistrement du client', 'error');
       return false;
     }
-  };
+  }, [showToast]);
 
-  const handleDeleteClient = async (id) => {
+  const handleDeleteClient = useCallback(async (id) => {
     if (window.confirm('Voulez-vous vraiment supprimer ce client ?')) {
       try {
         await clientService.delete(id);
-        setClients(clients.filter(c => c.id !== id));
+        setClients(prev => prev.filter(c => c.id !== id));
         showToast('Client supprimé');
         return true;
       } catch (error) {
@@ -46,12 +46,12 @@ export const useClients = (showToast) => {
       }
     }
     return false;
-  };
+  }, [showToast]);
 
-  const handleRepayClient = async (id, amount) => {
+  const handleRepayClient = useCallback(async (id, amount) => {
     try {
       const { data } = await clientService.addRepayment(id, amount);
-      setClients(clients.map(c => c.id === data.id ? data : c));
+      setClients(prev => prev.map(c => c.id === data.id ? data : c));
       fetchClients(); // Deep refresh for safety
       showToast('Remboursement effectué avec succès');
       return true;
@@ -59,7 +59,7 @@ export const useClients = (showToast) => {
       showToast('Erreur lors du remboursement', 'error');
       return false;
     }
-  };
+  }, [fetchClients, showToast]);
 
   return {
     clients,
