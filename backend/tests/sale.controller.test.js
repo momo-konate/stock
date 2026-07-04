@@ -15,7 +15,7 @@ vi.mock("../models/client.model.js", () => ({
 }));
 
 vi.mock("../models/clientTransaction.model.js", () => ({
-  ClientTransaction: { create: vi.fn() },
+  ClientTransaction: { create: vi.fn(), destroy: vi.fn() },
 }));
 
 import { Product, sequelize } from "../models/product.model.js";
@@ -197,7 +197,7 @@ describe("sale.controller", () => {
   });
 
   it("deleteSale restaure le stock (produit trouvé)", async () => {
-    const sale = { productId: "p1", quantite: 2, destroy: vi.fn().mockResolvedValue({}) };
+    const sale = { productId: "p1", quantite: 2, total: 200, amountPaid: 200, destroy: vi.fn().mockResolvedValue({}) };
     const product = { quantite: 5, update: vi.fn().mockResolvedValue({}) };
     Sale.findOne.mockResolvedValue(sale);
     Product.findOne.mockResolvedValue(product);
@@ -206,6 +206,34 @@ describe("sale.controller", () => {
     expect(product.update).toHaveBeenCalledWith({ quantite: 7 }, expect.anything());
     expect(sale.destroy).toHaveBeenCalled();
     expect(t.commit).toHaveBeenCalled();
+  });
+
+  it("deleteSale restaure la dette client et supprime la transaction associée", async () => {
+    const sale = {
+      id: "s1",
+      productId: "p1",
+      quantite: 2,
+      total: 200,
+      amountPaid: 50,
+      clientId: "cl1",
+      destroy: vi.fn().mockResolvedValue({}),
+    };
+    const product = { quantite: 5, update: vi.fn().mockResolvedValue({}) };
+    const client = { totalDebt: 300, update: vi.fn().mockResolvedValue({}) };
+    
+    Sale.findOne.mockResolvedValue(sale);
+    Product.findOne.mockResolvedValue(product);
+    Client.findOne.mockResolvedValue(client);
+    ClientTransaction.destroy.mockResolvedValue(1);
+    
+    const res = mockRes();
+    await saleCtrl.deleteSale({ params: { id: "s1" }, ownerId: "o1" }, res);
+    
+    expect(client.update).toHaveBeenCalledWith({ totalDebt: 150 }, expect.anything());
+    expect(ClientTransaction.destroy).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { saleId: "s1", type: "DEBT" } }),
+    );
+    expect(sale.destroy).toHaveBeenCalled();
   });
 
   it("deleteSale sans produit associé", async () => {

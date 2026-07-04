@@ -7,7 +7,7 @@ export const registerSchema = Joi.object({
     "any.required": "L'adresse email est obligatoire",
   }),
   password: Joi.string().min(6).required(),
-  role: Joi.string().valid("Administrateur", "vendeur").default("vendeur"),
+  role: Joi.string().valid("admin", "seller", "Administrateur", "vendeur").default("seller"),
   securityQuestion: Joi.string().allow("", null),
   securityAnswer: Joi.string().allow("", null),
 });

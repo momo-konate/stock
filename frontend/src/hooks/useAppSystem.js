@@ -8,20 +8,29 @@ export const useAppSystem = (showToast) => {
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
   const fetchExpenses = useCallback(async () => {
+    setIsLoading(true);
     try {
       const { data } = await expenseService.getAll();
       setExpenses(data);
-    } catch (error) {}
+    } catch (error) {
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const fetchShopSettings = useCallback(async () => {
+    setIsLoading(true);
     try {
       const { data } = await shopService.get();
       setShop(data);
-    } catch (error) {}
+    } catch (error) {
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const handleExpenseSubmit = useCallback(async (formData) => {
+    setIsSubmitLoading(true);
     try {
       const { data } = await expenseService.create(formData);
       setExpenses(prev => [data, ...prev]);
@@ -30,10 +39,13 @@ export const useAppSystem = (showToast) => {
     } catch (error) {
       showToast('Erreur lors de l\'enregistrement de la dépense', 'error');
       return false;
+    } finally {
+      setIsSubmitLoading(false);
     }
   }, [showToast]);
 
   const handleDeleteExpense = useCallback(async (id) => {
+    setIsSubmitLoading(true);
     try {
       await expenseService.delete(id);
       setExpenses(prev => prev.filter(e => e.id !== id));
@@ -42,10 +54,13 @@ export const useAppSystem = (showToast) => {
     } catch (error) {
       showToast('Erreur lors de la suppression', 'error');
       return false;
+    } finally {
+      setIsSubmitLoading(false);
     }
   }, [showToast]);
 
   const handleShopUpdate = useCallback(async (formData) => {
+    setIsSubmitLoading(true);
     try {
       const { data } = await shopService.update(formData);
       setShop(data);
@@ -54,6 +69,8 @@ export const useAppSystem = (showToast) => {
     } catch (error) {
       showToast('Erreur lors de la mise à jour des paramètres', 'error');
       return false;
+    } finally {
+      setIsSubmitLoading(false);
     }
   }, [showToast]);
 
@@ -61,6 +78,7 @@ export const useAppSystem = (showToast) => {
     expenses,
     shop,
     isLoading,
+    isSubmitLoading,
     fetchExpenses,
     fetchShopSettings,
     handleExpenseSubmit,

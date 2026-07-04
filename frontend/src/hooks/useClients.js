@@ -7,15 +7,19 @@ export const useClients = (showToast) => {
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
   const fetchClients = useCallback(async () => {
+    setIsLoading(true);
     try {
       const { data } = await clientService.getAll();
       setClients(data);
     } catch (error) {
       console.error('Erreur fetch clients:', error);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
   const handleClientSubmit = useCallback(async (formData, selectedClient) => {
+    setIsSubmitLoading(true);
     try {
       if (selectedClient) {
         const { data } = await clientService.update(selectedClient.id, formData);
@@ -30,11 +34,14 @@ export const useClients = (showToast) => {
     } catch (error) {
       showToast('Erreur lors de l\'enregistrement du client', 'error');
       return false;
+    } finally {
+      setIsSubmitLoading(false);
     }
   }, [showToast]);
 
   const handleDeleteClient = useCallback(async (id) => {
     if (window.confirm('Voulez-vous vraiment supprimer ce client ?')) {
+      setIsSubmitLoading(true);
       try {
         await clientService.delete(id);
         setClients(prev => prev.filter(c => c.id !== id));
@@ -43,12 +50,15 @@ export const useClients = (showToast) => {
       } catch (error) {
         showToast(error.response?.data?.message || 'Erreur lors de la suppression', 'error');
         return false;
+      } finally {
+        setIsSubmitLoading(false);
       }
     }
     return false;
   }, [showToast]);
 
   const handleRepayClient = useCallback(async (id, amount) => {
+    setIsSubmitLoading(true);
     try {
       const { data } = await clientService.addRepayment(id, amount);
       setClients(prev => prev.map(c => c.id === data.id ? data : c));
@@ -58,6 +68,8 @@ export const useClients = (showToast) => {
     } catch (error) {
       showToast('Erreur lors du remboursement', 'error');
       return false;
+    } finally {
+      setIsSubmitLoading(false);
     }
   }, [fetchClients, showToast]);
 
@@ -65,6 +77,7 @@ export const useClients = (showToast) => {
     clients,
     setClients,
     isLoading,
+    isSubmitLoading,
     fetchClients,
     handleClientSubmit,
     handleDeleteClient,

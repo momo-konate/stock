@@ -121,8 +121,8 @@ const UserModal = ({ isOpen, user, onClose, onSubmit, isLoading }) => {
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               >
-                <option value="vendeur">Vendeur (Accès Standard)</option>
-                <option value="Administrateur">Administrateur (Accès Complet)</option>
+                <option value="seller">Vendeur (Accès Standard)</option>
+                <option value="admin">Administrateur (Accès Complet)</option>
               </select>
             </div>
           </div>

@@ -203,7 +203,14 @@ export const updateUser = async (req, res) => {
         .json({ message: "Utilisateur non trouvé ou non autorisé" });
     }
 
-    const updateData = { username, email, role };
+    let dbRole = role;
+    if (role === "Administrateur" || role === "admin") {
+      dbRole = "admin";
+    } else if (role === "vendeur" || role === "seller") {
+      dbRole = "seller";
+    }
+
+    const updateData = { username, email, role: dbRole };
     if (password) {
       updateData.password = password;
     }

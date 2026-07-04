@@ -114,6 +114,7 @@ export const useSales = (showToast, fetchClients, setProducts) => {
         }
         setSales(prev => prev.filter(s => s.id !== id));
         showToast('Vente supprimée et stock restauré');
+        if (fetchClients) fetchClients();
         return true;
       } catch (error) {
         showToast('Erreur lors de la suppression', 'error');
@@ -121,7 +122,7 @@ export const useSales = (showToast, fetchClients, setProducts) => {
       }
     }
     return false;
-  }, [sales, setProducts, showToast]);
+  }, [sales, setProducts, showToast, fetchClients]);
 
   const handleDeleteAllSales = useCallback(async () => {
     if (window.confirm('Voulez-vous vraiment vider tout l\'historique des ventes ? Cette action est irréversible.')) {

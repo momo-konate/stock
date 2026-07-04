@@ -178,6 +178,21 @@ export const deleteSale = async (req, res) => {
       }, { transaction: t });
     }
 
+    // Restaurer la dette client et supprimer la transaction associée si applicable
+    const debt = sale.total - sale.amountPaid;
+    if (sale.clientId && debt > 0) {
+      const client = await Client.findOne({ where: { id: sale.clientId, userId: req.ownerId } });
+      if (client) {
+        const newDebt = Math.max(0, client.totalDebt - debt);
+        await client.update({ totalDebt: newDebt }, { transaction: t });
+      }
+      // Supprimer la transaction de dette associée
+      await ClientTransaction.destroy({
+        where: { saleId: sale.id, type: 'DEBT' },
+        transaction: t
+      });
+    }
+
     // Supprimer la vente (Soft delete via paranoid: true)
     await sale.destroy({ transaction: t });
 

@@ -75,6 +75,7 @@ export const useUsers = (showToast) => {
 
   return {
     users,
+    isSubmitLoading,
     fetchUsers,
     handleUserSubmit,
     handleDeleteUser,
