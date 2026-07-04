@@ -1,5 +1,6 @@
+// Modèle ClientTransaction : historique des dettes (DEBT) et paiements (PAYMENT).
 import { DataTypes } from 'sequelize';
-import { sequelize } from './product.model.js';
+import { sequelize } from '../config/database.js';
 
 const ClientTransaction = sequelize.define('ClientTransaction', {
   id: {

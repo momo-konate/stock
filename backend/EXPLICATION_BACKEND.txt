@@ -1,0 +1,461 @@
+========================================================================
+   STOCKPRO - EXPLICATION COMPLETE DU BACKEND
+   Projet scolaire - Gestion de Stock
+   Document rédigé pour comprendre TOUT le backend, couche par couche.
+========================================================================
+
+
+------------------------------------------------------------------------
+1. C'EST QUOI CE BACKEND ?
+------------------------------------------------------------------------
+
+Le backend est le "cerveau" de l'application, invisible pour l'utilisateur.
+C'est une API REST : un programme qui tourne sur un serveur et qui répond
+à des requêtes HTTP (GET, POST, PUT, DELETE) envoyées par le frontend
+(l'interface React que voit l'utilisateur).
+
+Exemple concret :
+  - L'utilisateur clique sur "Ajouter un produit" dans le navigateur.
+  - Le frontend envoie une requête POST /api/products au backend.
+  - Le backend vérifie qui fait la demande, valide les données,
+    enregistre le produit dans la base, puis renvoie une réponse (JSON).
+
+Rôle du backend :
+  - Gérer les utilisateurs (inscription, connexion, sécurité).
+  - Stocker et retrouver les données (produits, ventes, clients, etc.).
+  - Appliquer les règles métier (ex : on ne peut pas vendre plus que le stock).
+  - Protéger les données (chaque boutique ne voit QUE ses propres données).
+
+
+------------------------------------------------------------------------
+2. LES TECHNOLOGIES UTILISEES (LA "STACK")
+------------------------------------------------------------------------
+
+  - Node.js .......... Permet d'exécuter du JavaScript côté serveur.
+  - Express .......... Le "framework" qui gère les routes et les requêtes HTTP.
+  - Sequelize ........ Un ORM : il traduit le JavaScript en requêtes SQL.
+                       On manipule des objets JS, il écrit le SQL à notre place.
+  - SQLite ........... La base de données, stockée dans un simple fichier
+                       (database.sqlite). Idéal pour un projet scolaire.
+  - JWT .............. (jsonwebtoken) Jetons d'authentification.
+  - bcryptjs ......... Chiffre (hashe) les mots de passe.
+  - Joi .............. Valide les données envoyées par le client.
+  - Helmet + CORS .... Sécurité HTTP.
+  - express-rate-limit  Limite le nombre de requêtes (anti-abus).
+  - Vitest ........... L'outil de tests automatiques.
+
+Le projet utilise les "modules ES" (import/export), grâce à
+"type": "module" dans package.json.
+
+
+------------------------------------------------------------------------
+3. ARCHITECTURE : ORGANISATION DES DOSSIERS
+------------------------------------------------------------------------
+
+Le backend suit le modèle "MVC" adapté à une API (Model - Controller - Route).
+Chaque dossier a UNE responsabilité précise. C'est le principe de
+"séparation des responsabilités".
+
+  backend/
+  |
+  |-- server.js .............. POINT D'ENTREE. Démarre le serveur Express.
+  |
+  |-- config/
+  |     |-- database.js ....... Connexion à la base (instance Sequelize unique).
+  |     |-- constants.js ...... Configuration globale (port, JWT, rate limit...).
+  |
+  |-- constants/
+  |     |-- categories.js ..... Liste fixe des catégories de produits.
+  |
+  |-- models/ ................ Les TABLES de la base (structure des données).
+  |     |-- product.model.js
+  |     |-- user.model.js
+  |     |-- category.model.js
+  |     |-- client.model.js
+  |     |-- clientTransaction.model.js
+  |     |-- expense.model.js
+  |     |-- sale.model.js
+  |     |-- shop.model.js
+  |     |-- supplier.model.js
+  |     |-- associations.js ... Les relations entre les tables.
+  |
+  |-- controllers/ ........... La LOGIQUE METIER (que faire pour chaque action).
+  |     |-- auth.controller.js
+  |     |-- product.controller.js
+  |     |-- category.controller.js
+  |     |-- client.controller.js
+  |     |-- sale.controller.js
+  |     |-- expense.controller.js
+  |     |-- shop.controller.js
+  |     |-- supplier.controller.js
+  |
+  |-- routes/ ................ Les ADRESSES (URL) de l'API -> quel controller.
+  |     |-- auth.routes.js
+  |     |-- product.routes.js
+  |     |-- ... (une par ressource)
+  |
+  |-- middleware/ ............ Fonctions "intermédiaires" exécutées AVANT/APRES.
+  |     |-- auth.middleware.js  Vérifie le token JWT (protect) et le rôle (admin).
+  |     |-- validation.js ..... Valide le corps des requêtes avec Joi.
+  |     |-- security.js ....... Limiteurs de débit (rate limiting).
+  |     |-- errorHandler.js ... Gestion centralisée des erreurs et des 404.
+  |
+  |-- schemas/ .............. Les REGLES de validation Joi (par ressource).
+  |     |-- auth.schema.js, product.schema.js, client.schema.js, ...
+  |
+  |-- utils/
+  |     |-- logger.js ........ Affichage coloré des logs dans la console.
+  |
+  |-- tests/ ................ Les tests automatiques (Vitest).
+  |
+  |-- database.sqlite ....... LE FICHIER de la base de données (les vraies données).
+
+
+------------------------------------------------------------------------
+4. LE VOYAGE D'UNE REQUETE (le plus important à comprendre !)
+------------------------------------------------------------------------
+
+Quand le frontend envoie une requête, elle traverse plusieurs couches
+dans l'ordre. Exemple : POST /api/products (créer un produit)
+
+  1) server.js reçoit la requête.
+        |
+  2) Middlewares de sécurité globaux :
+        - helmet()  -> ajoute des en-têtes HTTP sécurisés
+        - cors()    -> autorise le frontend à appeler l'API
+        - globalLimiter -> bloque si trop de requêtes
+        - express.json() -> transforme le corps JSON en objet JavaScript
+        |
+  3) Le routeur trouve la bonne route : app.use("/api/products", protect, productRoutes)
+        |
+  4) protect (middleware d'auth) :
+        - Lit le token JWT dans l'en-tête "Authorization: Bearer xxx"
+        - Vérifie le token, retrouve l'utilisateur en base
+        - Définit req.user et req.ownerId (l'admin propriétaire des données)
+        - Si pas de token / token invalide -> répond 401 (STOP)
+        |
+  5) validate(productSchema) :
+        - Vérifie que les données envoyées sont correctes (nom, prix, etc.)
+        - Si invalide -> répond 400 avec le message d'erreur (STOP)
+        |
+  6) createProduct (le CONTROLLER) :
+        - Contient la logique : Product.create({...})
+        - Sequelize traduit ça en SQL "INSERT INTO Products ..."
+        - SQLite enregistre dans database.sqlite
+        - Le controller répond 201 (créé) + le produit en JSON
+        |
+  7) Si une erreur non gérée survient -> errorHandler renvoie une réponse propre.
+
+C'est ce qu'on appelle un "pipeline de middlewares" : chaque étape peut
+soit passer la main à la suivante (next()), soit arrêter et répondre.
+
+
+------------------------------------------------------------------------
+5. LES MODELES (LA STRUCTURE DES DONNEES)
+------------------------------------------------------------------------
+
+Un "modèle" décrit une table de la base : ses colonnes et leurs types.
+Sequelize crée automatiquement la table à partir du modèle (sequelize.sync()).
+
+POINT IMPORTANT (architecture) :
+Tous les modèles importent la MEME instance Sequelize depuis
+config/database.js. Ils partagent donc la même connexion à la base.
+
+Détail des modèles :
+
+* User (utilisateur)
+    - id (UUID), username, email (unique), password (hashé)
+    - role : "admin" (patron) ou "seller" (vendeur)
+    - securityQuestion / securityAnswer : pour récupérer le mot de passe
+    - parentId : si vendeur, pointe vers l'admin qui l'a créé (hiérarchie)
+    - HOOKS : avant enregistrement/modif, bcrypt hashe le mot de passe et
+      la réponse de sécurité (jamais stockés en clair). C'est la SECURITE.
+    - METHODES : comparePassword() et verifySecurityAnswer() comparent une
+      saisie avec la version hashée en base.
+
+* Product (produit)
+    - id, nom, description, quantite, prix, alertThreshold (seuil d'alerte),
+      categorie, userId (le propriétaire)
+    - paranoid: true -> "soft delete" : supprimer ajoute une date deletedAt,
+      la ligne n'est pas vraiment effacée (on peut la restaurer / historiser).
+
+* Category (catégorie)
+    - id, nom, userId. Chaque utilisateur a ses propres catégories.
+
+* Client
+    - id, name, phone, totalDebt (dette totale), idCardPhoto, userId.
+
+* ClientTransaction (historique financier d'un client)
+    - type : "DEBT" (nouvelle dette) ou "PAYMENT" (remboursement)
+    - amount, date, description, clientId, saleId.
+
+* Sale (vente)
+    - productId, productName, quantite, prixUnitaire, total
+    - clientId (si vente à crédit), paymentType (cash/credit/mixte)
+    - amountPaid (montant payé), paymentStatus (paid/partial/unpaid)
+    - paranoid: true -> corbeille des ventes supprimées.
+
+* Expense (dépense)
+    - description, amount (min 0.1), date, userId.
+
+* Shop (paramètres de la boutique)
+    - name, address, phone, logo (image en base64), userId (unique : 1 shop/admin).
+
+* Supplier (fournisseur)
+    - name, phone, email, address, category, ownerId.
+
+* associations.js (les RELATIONS entre tables)
+    - Une vente APPARTIENT à un produit et à un client (belongsTo).
+    - Un produit A PLUSIEURS ventes (hasMany).
+    - Un client A PLUSIEURS transactions.
+    - Un utilisateur (admin) A PLUSIEURS "membres" (ses vendeurs).
+    Ces relations permettent de faire des requêtes liées
+    (ex : récupérer une vente AVEC les infos du produit).
+
+
+------------------------------------------------------------------------
+6. LES CONTROLLERS (LA LOGIQUE METIER)
+------------------------------------------------------------------------
+
+Un controller = un ensemble de fonctions, une par action.
+Chaque fonction reçoit (req, res) : la requête et la réponse.
+
+Structure type d'une fonction de controller :
+
+    export const createProduct = async (req, res) => {
+      try {
+        // 1. Récupérer les données : req.body, req.params, req.query
+        // 2. Appeler le modèle (Sequelize) pour lire/écrire en base
+        // 3. Répondre : res.status(...).json(...)
+      } catch (error) {
+        // 4. En cas de problème, répondre avec un code d'erreur
+        res.status(500).json({ message: '...', error: error.message });
+      }
+    };
+
+Les codes de réponse HTTP utilisés :
+    200 OK ............ succès (lecture / mise à jour)
+    201 Created ....... création réussie
+    400 Bad Request ... données invalides / règle métier violée
+    401 Unauthorized .. non connecté / token invalide
+    403 Forbidden ..... connecté mais pas les droits (pas admin)
+    404 Not Found ..... ressource introuvable
+    500 Server Error .. erreur interne inattendue
+
+Résumé de chaque controller :
+
+* auth.controller
+    register .............. crée un compte. Le 1er = admin, sinon vendeur.
+    login ................. vérifie email + mot de passe, renvoie un token JWT.
+    resetPassword ......... réinitialise via la question de sécurité.
+    getSecurityQuestion ... renvoie la question secrète d'un email.
+    getUsers / deleteUser / updateUser / getMe .. gestion des comptes (admin).
+
+* product.controller
+    getProducts (filtre par catégorie possible), getCategories,
+    createProduct, updateProduct, deleteProduct.
+
+* category.controller
+    getCategories, createCategory (refuse les doublons),
+    updateCategory (renomme aussi la catégorie dans les produits liés),
+    deleteCategory (interdit si la catégorie est utilisée par un produit).
+
+* client.controller
+    getClients, createClient, updateClient,
+    addRepayment (réduit la dette + enregistre une transaction PAYMENT),
+    deleteClient (interdit si dette > 0),
+    getClientTransactions (historique du client).
+
+* sale.controller (le plus complexe)
+    getSales, getDeletedSales (corbeille), getSaleById,
+    createSale ...... utilise une TRANSACTION : vérifie le stock, calcule le
+                      total, gère le crédit (dette client), crée la vente,
+                      diminue le stock. Tout est validé ensemble (commit) ou
+                      tout est annulé (rollback) en cas d'erreur.
+    deleteSale ...... supprime la vente ET restaure le stock (transaction).
+    deleteAllSales .. vide l'historique.
+
+* expense.controller ... getExpenses, createExpense, deleteExpense.
+* shop.controller ...... getShopSettings (crée un profil par défaut si absent),
+                         updateShopSettings.
+* supplier.controller .. getSuppliers, createSupplier, updateSupplier, deleteSupplier.
+
+
+------------------------------------------------------------------------
+7. LES ROUTES (LES ADRESSES DE L'API)
+------------------------------------------------------------------------
+
+Une route associe une URL + une méthode HTTP à une fonction de controller.
+Toutes les routes "métier" sont préfixées par /api et protégées par `protect`
+(défini dans server.js), sauf /api/auth (login/register sont publics).
+
+  AUTHENTIFICATION  (/api/auth)
+    POST   /login .................... connexion
+    POST   /register ................. inscription (public = crée un admin)
+    POST   /reset-password ........... réinitialiser le mot de passe
+    GET    /security-question/:email . récupérer la question secrète
+    GET    /me ....................... infos de l'utilisateur connecté
+    GET    /users .................... liste des vendeurs        (admin)
+    POST   /users .................... créer un vendeur           (admin)
+    PUT    /users/:id ................ modifier un vendeur        (admin)
+    DELETE /users/:id ............... supprimer un vendeur       (admin)
+
+  PRODUITS  (/api/products)
+    GET    /categories ... liste des catégories fixes
+    GET    / ............. liste des produits (filtre ?category=...)
+    POST   / ............. créer un produit         (validation Joi)
+    PUT    /:id .......... modifier un produit       (validation Joi)
+    DELETE /:id .......... supprimer un produit      (admin)
+
+  VENTES  (/api/sales)
+    GET    / ............. liste des ventes
+    GET    /deleted ...... corbeille                 (admin)
+    GET    /:id .......... une vente
+    POST   / ............. créer une vente           (validation Joi)
+    DELETE /:id .......... supprimer une vente       (admin)
+    DELETE / ............. vider l'historique        (admin)
+
+  CLIENTS  (/api/clients)
+    GET / , POST / , PUT /:id , DELETE /:id
+    POST /:id/repayment ........ enregistrer un remboursement
+    GET  /:id/transactions ..... historique du client
+
+  DEPENSES  (/api/expenses)   GET / , POST / , DELETE /:id (admin)
+  BOUTIQUE  (/api/shop)       GET / , PUT /
+  FOURNISSEURS (/api/suppliers) GET / , POST / , PUT /:id , DELETE /:id
+  CATEGORIES (/api/categories)  GET / , POST / , PUT /:id , DELETE /:id
+
+
+------------------------------------------------------------------------
+8. LES CONCEPTS DE SECURITE (à bien expliquer en soutenance)
+------------------------------------------------------------------------
+
+* AUTHENTIFICATION PAR JWT (JSON Web Token)
+    - À la connexion, le serveur génère un token signé avec une clé secrète
+      (JWT_SECRET) et l'envoie au frontend.
+    - À chaque requête suivante, le frontend renvoie ce token.
+    - Le middleware `protect` vérifie la signature du token. Impossible de
+      le falsifier sans connaître la clé secrète.
+
+* MOTS DE PASSE HASHES (bcrypt)
+    - Les mots de passe ne sont JAMAIS stockés en clair.
+    - bcrypt applique une fonction à sens unique + un "sel" aléatoire.
+    - Pour vérifier, on re-hashe la saisie et on compare (comparePassword).
+
+* ISOLATION DES DONNEES (multi-boutiques) : le champ `ownerId`
+    - Chaque requête protégée définit req.ownerId = l'admin propriétaire.
+    - Toutes les requêtes en base filtrent par cet ownerId
+      (ex : where: { userId: req.ownerId }).
+    - Résultat : un utilisateur ne voit et ne modifie QUE ses propres données.
+    - Un vendeur travaille sur les données de SON admin (via parentId).
+
+* VALIDATION DES ENTREES (Joi)
+    - Avant d'atteindre le controller, `validate(schema)` vérifie le format.
+    - Empêche les données incorrectes ou malveillantes d'entrer.
+
+* RATE LIMITING (express-rate-limit)
+    - Limite le nombre de requêtes par IP (anti "force brute" sur /login).
+
+* TRANSACTIONS (Sequelize)
+    - Pour une vente : plusieurs écritures doivent réussir ENSEMBLE
+      (créer la vente, baisser le stock, mettre à jour la dette).
+    - Si une échoue, `rollback` annule tout : la base reste cohérente.
+
+* SOFT DELETE (paranoid)
+    - Produits et ventes ne sont pas vraiment effacés : on garde une trace
+      (deletedAt) -> corbeille / historique / restauration possible.
+
+
+------------------------------------------------------------------------
+9. LES TESTS AUTOMATIQUES ET LA COUVERTURE
+------------------------------------------------------------------------
+
+Les tests vérifient automatiquement que le code fonctionne comme prévu.
+On utilise Vitest. Les commandes :
+
+    npm test .............. lance tous les tests
+    npm run test:coverage . lance les tests + mesure la couverture
+
+Fichiers de tests (dossier tests/) :
+    backend.unit.test.js .. premiers tests (middleware + catégorie)
+    controllers.test.js ... teste les 8 controllers + le middleware d'auth
+    models.test.js ........ teste les modèles, les hooks bcrypt, les relations
+    utils.test.js ......... teste les schémas Joi et les middlewares
+
+Principe des tests unitaires ici :
+    - On "mocke" (simule) les modèles pour ne PAS toucher la vraie base.
+    - On appelle chaque fonction avec de fausses req/res.
+    - On vérifie qu'elle répond le bon code (200, 400, 404, 500...) et
+      qu'elle appelle bien la base avec les bons arguments.
+
+COUVERTURE actuelle : environ 99,8 % (statements, branches, fonctions).
+Le rapport détaillé, cliquable ligne par ligne, est généré dans :
+    coverage/index.html   (à ouvrir dans un navigateur)
+
+La couverture mesure le pourcentage de lignes/branches réellement
+exécutées par les tests. Plus c'est haut, plus le code est vérifié.
+
+
+------------------------------------------------------------------------
+10. CE QUI A ETE AMELIORE (REFACTORING)
+------------------------------------------------------------------------
+
+Le code a été refactoré SANS changer son comportement (les 156 tests
+passent toujours). Améliorations :
+
+  1. Connexion à la base centralisée dans config/database.js.
+     Avant, l'instance Sequelize était "cachée" dans product.model.js
+     et tous les modèles en dépendaient. Maintenant chaque modèle importe
+     la connexion depuis un endroit clair et dédié (meilleure architecture).
+
+  2. Suppression des console.log de débogage éparpillés dans les
+     controllers (catégorie, boutique, vente) qui polluaient la console.
+
+  3. Utilisation du logger centralisé (utils/logger.js) pour les erreurs
+     d'authentification, au lieu de console.error brut.
+
+  4. Nettoyage d'un import en double dans routes/expense.routes.js.
+
+  5. Ajout de commentaires d'en-tête sur chaque modèle et controller
+     pour expliquer leur rôle.
+
+
+------------------------------------------------------------------------
+11. PISTES D'AMELIORATION FUTURES (pour aller plus loin)
+------------------------------------------------------------------------
+
+  - Incohérence de nommage : Supplier utilise `ownerId` (type INTEGER)
+    alors que les autres tables utilisent `userId` (type UUID). À harmoniser
+    (attention : cela modifie le schéma de la base existante).
+
+  - Ne pas renvoyer error.message brut au client en production
+    (peut révéler des détails techniques). Le middleware errorHandler
+    gère déjà ce cas selon l'environnement (development / production).
+
+  - Factoriser les blocs try/catch répétitifs avec un "asyncHandler".
+
+  - Ajouter une pagination sur les listes (produits, ventes) si le volume
+    de données grandit.
+
+
+------------------------------------------------------------------------
+12. COMMENT LANCER LE PROJET
+------------------------------------------------------------------------
+
+  Dans le dossier backend :
+    npm install ........... installe les dépendances (1re fois)
+    npm run dev ........... démarre le serveur en mode développement (nodemon)
+    npm start ............. démarre le serveur en mode normal
+    npm test .............. lance les tests
+    npm run test:coverage . tests + rapport de couverture
+
+  Prérequis : un fichier .env avec au minimum une variable JWT_SECRET
+  (le serveur refuse de démarrer sans, pour des raisons de sécurité).
+  Exemple de .env :
+    JWT_SECRET=une_longue_chaine_secrete_aleatoire
+    PORT=5000
+    NODE_ENV=development
+
+========================================================================
+   FIN DU DOCUMENT
+========================================================================

@@ -1,3 +1,8 @@
+/**
+ * Controller Client
+ * Gère les clients et leur dette (crédit). `addRepayment` enregistre un
+ * remboursement et trace l'opération dans ClientTransaction.
+ */
 import { Client } from '../models/client.model.js';
 import { ClientTransaction } from '../models/clientTransaction.model.js';
 

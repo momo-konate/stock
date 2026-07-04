@@ -1,3 +1,4 @@
+// Controller Boutique : lit/écrit les paramètres du magasin (crée un profil si absent).
 import { Shop } from '../models/shop.model.js';
 
 export const getShopSettings = async (req, res) => {
@@ -22,20 +23,17 @@ export const getShopSettings = async (req, res) => {
 export const updateShopSettings = async (req, res) => {
   try {
     const { name, address, phone, logo } = req.body;
-    console.log(`Mise à jour boutique pour l'utilisateur ${req.ownerId}`);
-    
+
     let shop = await Shop.findOne({ where: { userId: req.ownerId } });
-    
+
     if (shop) {
       await shop.update({ name, address, phone, logo });
     } else {
       shop = await Shop.create({ name, address, phone, logo, userId: req.ownerId });
     }
-    
-    console.log('Paramètres boutique mis à jour avec succès');
+
     res.json(shop);
   } catch (error) {
-    console.error('Erreur mise à jour boutique:', error);
     res.status(400).json({ message: 'Erreur lors de la mise à jour des paramètres', error: error.message });
   }
 };

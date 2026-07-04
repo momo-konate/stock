@@ -1,5 +1,6 @@
+// Modèle Expense : dépense de la boutique (loyer, électricité, ...).
 import { DataTypes } from 'sequelize';
-import { sequelize } from './product.model.js';
+import { sequelize } from '../config/database.js';
 
 const Expense = sequelize.define('Expense', {
   id: {

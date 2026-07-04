@@ -1,5 +1,13 @@
+/**
+ * Middlewares d'authentification
+ * ------------------------------
+ * protect : vérifie le token JWT, charge l'utilisateur et définit `req.ownerId`
+ *           (l'admin propriétaire des données, qu'on soit admin ou vendeur).
+ * admin   : autorise uniquement les utilisateurs de rôle "admin".
+ */
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user.model.js';
+import { logger } from '../utils/logger.js';
 
 export const protect = async (req, res, next) => {
   let token;
@@ -19,7 +27,7 @@ export const protect = async (req, res, next) => {
       
       return next();
     } catch (error) {
-      console.error('Erreur token:', error);
+      logger.error('Échec de vérification du token', error);
       return res.status(401).json({ message: 'Non autorisé, échec du token' });
     }
   }

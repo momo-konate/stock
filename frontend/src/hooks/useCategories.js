@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { categoryService } from '../services/api';
+import { useState, useCallback } from "react";
+import { categoryService } from "../services/api";
 
 export const useCategories = (showToast) => {
   const [categories, setCategories] = useState([]);
@@ -12,50 +12,69 @@ export const useCategories = (showToast) => {
       const { data } = await categoryService.getAll();
       setCategories(data);
     } catch (error) {
-      showToast('Erreur lors de la récupération des catégories', 'error');
+      showToast("Erreur lors de la récupération des catégories", "error");
     } finally {
       setIsLoading(false);
     }
   }, [showToast]);
 
-  const handleCategorySubmit = useCallback(async (formData, id = null) => {
-    setIsSubmitLoading(true);
-    try {
-      if (id) {
-        const { data } = await categoryService.update(id, formData);
-        setCategories(prev => prev.map(c => c.id === id ? data : c));
-        showToast('Catégorie mise à jour');
-      } else {
-        const { data } = await categoryService.create(formData);
-        setCategories(prev => [...prev, data]);
-        showToast('Catégorie créée');
-      }
-      return true;
-    } catch (error) {
-      showToast(error.response?.data?.message || 'Erreur lors de l\'enregistrement', 'error');
-      return false;
-    } finally {
-      setIsSubmitLoading(false);
-    }
-  }, [showToast]);
-
-  const handleDeleteCategory = useCallback(async (id) => {
-    if (window.confirm('Voulez-vous vraiment supprimer cette catégorie ?')) {
+  const handleCategorySubmit = useCallback(
+    async (idOrData, formData = null) => {
       setIsSubmitLoading(true);
       try {
-        await categoryService.delete(id);
-        setCategories(prev => prev.filter(c => c.id !== id));
-        showToast('Catégorie supprimée');
+        const isUpdate =
+          formData !== null &&
+          formData !== undefined &&
+          (typeof idOrData === "number" || typeof idOrData === "string");
+
+        if (isUpdate) {
+          const { data } = await categoryService.update(idOrData, formData);
+          setCategories((prev) =>
+            prev.map((c) => (c.id === idOrData ? data : c)),
+          );
+          showToast("Catégorie mise à jour");
+        } else {
+          const { data } = await categoryService.create(idOrData);
+          setCategories((prev) => [...prev, data]);
+          showToast("Catégorie créée");
+        }
         return true;
       } catch (error) {
-        showToast(error.response?.data?.message || 'Erreur lors de la suppression', 'error');
+        showToast(
+          error.response?.data?.message || "Erreur lors de l'enregistrement",
+          "error",
+        );
         return false;
       } finally {
         setIsSubmitLoading(false);
       }
-    }
-    return false;
-  }, [showToast]);
+    },
+    [showToast],
+  );
+
+  const handleDeleteCategory = useCallback(
+    async (id) => {
+      if (window.confirm("Voulez-vous vraiment supprimer cette catégorie ?")) {
+        setIsSubmitLoading(true);
+        try {
+          await categoryService.delete(id);
+          setCategories((prev) => prev.filter((c) => c.id !== id));
+          showToast("Catégorie supprimée");
+          return true;
+        } catch (error) {
+          showToast(
+            error.response?.data?.message || "Erreur lors de la suppression",
+            "error",
+          );
+          return false;
+        } finally {
+          setIsSubmitLoading(false);
+        }
+      }
+      return false;
+    },
+    [showToast],
+  );
 
   return {
     categories,
@@ -63,6 +82,6 @@ export const useCategories = (showToast) => {
     isSubmitLoading,
     fetchCategories,
     handleCategorySubmit,
-    handleDeleteCategory
+    handleDeleteCategory,
   };
 };

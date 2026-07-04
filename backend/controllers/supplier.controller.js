@@ -1,3 +1,4 @@
+// Controller Fournisseur : CRUD des fournisseurs, isolés par ownerId.
 import Supplier from '../models/supplier.model.js';
 
 export const getSuppliers = async (req, res) => {

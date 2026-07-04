@@ -1,3 +1,8 @@
+/**
+ * Controller Catégorie
+ * Renommer une catégorie met aussi à jour les produits qui la référencent
+ * (le produit stocke le NOM de la catégorie). Suppression interdite si utilisée.
+ */
 import { Category } from "../models/category.model.js";
 import { Product } from "../models/product.model.js";
 
@@ -83,7 +88,6 @@ export const deleteCategory = async (req, res) => {
     });
 
     if (!category) {
-      console.log(`Catégorie non trouvée pour l'ID: ${id}`);
       return res.status(404).json({ message: "Catégorie non trouvée" });
     }
 
@@ -92,9 +96,6 @@ export const deleteCategory = async (req, res) => {
     });
 
     if (productUsing) {
-      console.log(
-        `Impossible de supprimer la catégorie ${category.nom} car elle est utilisée par des produits.`,
-      );
       return res.status(400).json({
         message:
           "Impossible de supprimer une catégorie utilisée par des produits",
@@ -104,7 +105,6 @@ export const deleteCategory = async (req, res) => {
     await category.destroy();
     res.json({ message: "Catégorie supprimée avec succès" });
   } catch (error) {
-    console.error("Erreur lors de la suppression de la catégorie:", error);
     res.status(500).json({
       message: "Erreur lors de la suppression de la catégorie",
       error: error.message,

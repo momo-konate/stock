@@ -1,5 +1,6 @@
+// Modèle Shop : paramètres de la boutique (nom, logo, adresse). 1 shop par admin.
 import { DataTypes } from 'sequelize';
-import { sequelize } from '../models/product.model.js';
+import { sequelize } from '../config/database.js';
 
 export const Shop = sequelize.define('Shop', {
   id: {

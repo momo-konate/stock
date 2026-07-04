@@ -6,7 +6,7 @@ const UserModal = ({ isOpen, user, onClose, onSubmit, isLoading }) => {
     username: '',
     email: '',
     password: '',
-    role: 'vendeur',
+    role: 'seller',
     securityQuestion: 'Quel est le nom de votre premier animal de compagnie ?',
     securityAnswer: ''
   });
@@ -17,7 +17,7 @@ const UserModal = ({ isOpen, user, onClose, onSubmit, isLoading }) => {
         username: user.username || '',
         email: user.email || '',
         password: '', // On laisse vide car le mot de passe est optionnel à l'édition
-        role: user.role || 'vendeur',
+        role: user.role || 'seller',
         securityQuestion: user.securityQuestion || 'Quel est le nom de votre premier animal de compagnie ?',
         securityAnswer: user.securityAnswer || ''
       });
@@ -26,7 +26,7 @@ const UserModal = ({ isOpen, user, onClose, onSubmit, isLoading }) => {
         username: '',
         email: '',
         password: '',
-        role: 'vendeur',
+        role: 'seller',
         securityQuestion: 'Quel est le nom de votre premier animal de compagnie ?',
         securityAnswer: ''
       });

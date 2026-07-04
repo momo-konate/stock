@@ -1,3 +1,7 @@
+/**
+ * Controller Produit (CRUD du stock)
+ * Chaque produit est isolé par `req.ownerId` (l'admin propriétaire).
+ */
 import { Product } from '../models/product.model.js';
 import { CATEGORIES } from '../constants/categories.js';
 

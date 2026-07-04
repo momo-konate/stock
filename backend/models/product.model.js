@@ -1,15 +1,15 @@
-import { Sequelize, DataTypes } from 'sequelize';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: path.join(__dirname, '../database.sqlite'),
-  logging: false
-});
+/**
+ * Modèle Product (Produit)
+ * -------------------------
+ * Un article du stock. Appartient à un utilisateur via `userId`.
+ * `paranoid: true` active le "soft delete" : supprimer un produit
+ * ajoute une date `deletedAt` au lieu de l'effacer réellement.
+ *
+ * NB : on ré-exporte `sequelize` pour compatibilité avec les fichiers
+ * qui l'importaient historiquement depuis ce modèle.
+ */
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
 const Product = sequelize.define('Product', {
   id: {

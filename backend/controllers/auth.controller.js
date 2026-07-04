@@ -1,3 +1,10 @@
+/**
+ * Controller Authentification
+ * ---------------------------
+ * Inscription, connexion, réinitialisation du mot de passe (question secrète)
+ * et gestion des utilisateurs (vendeurs) par l'admin.
+ * Le token JWT est renvoyé au client après login/register.
+ */
 import { User } from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 

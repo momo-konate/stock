@@ -1,5 +1,6 @@
+// Modèle Sale : une vente. Soft delete (paranoid) pour la corbeille.
 import { DataTypes } from 'sequelize';
-import { sequelize } from './product.model.js';
+import { sequelize } from '../config/database.js';
 
 const Sale = sequelize.define('Sale', {
   id: {

@@ -1,5 +1,6 @@
+// Modèle Client : client de la boutique. `totalDebt` = dette totale (crédit).
 import { DataTypes } from 'sequelize';
-import { sequelize } from './product.model.js';
+import { sequelize } from '../config/database.js';
 
 const Client = sequelize.define('Client', {
   id: {

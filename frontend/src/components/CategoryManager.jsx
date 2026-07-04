@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, Edit2, X, Check, FolderPlus } from 'lucide-react';
+import React, { useState } from "react";
+import { Plus, Trash2, Edit2, X, Check, FolderPlus } from "lucide-react";
 
-const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isLoading }) => {
-  const [newCategory, setNewCategory] = useState('');
+const CategoryManager = ({
+  categories,
+  onAdd,
+  onUpdate,
+  onDelete,
+  isLoading,
+}) => {
+  const [newCategory, setNewCategory] = useState("");
   const [editingId, setEditingId] = useState(null);
-  const [editName, setEditName] = useState('');
+  const [editName, setEditName] = useState("");
 
-  const handleAdd = (e) => {
+  const handleAdd = async (e) => {
     e.preventDefault();
     if (!newCategory.trim()) return;
-    onAdd({ nom: newCategory.trim() });
-    setNewCategory('');
+    const success = await onAdd({ nom: newCategory.trim() });
+    if (success) {
+      setNewCategory("");
+    }
   };
 
   const startEdit = (cat) => {
@@ -18,10 +26,12 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isLoading }) =
     setEditName(cat.nom);
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!editName.trim()) return;
-    onUpdate(editingId, { nom: editName.trim() });
-    setEditingId(null);
+    const success = await onUpdate(editingId, { nom: editName.trim() });
+    if (success) {
+      setEditingId(null);
+    }
   };
 
   return (
@@ -35,8 +45,8 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isLoading }) =
           className="input flex-1"
           required
         />
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={isLoading || !newCategory.trim()}
           className="btn btn-primary px-4"
         >
@@ -50,8 +60,12 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isLoading }) =
           <table className="w-full text-left">
             <thead className="bg-white border-b border-slate-200">
               <tr>
-                <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">Nom de la catégorie</th>
-                <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
+                <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase">
+                  Nom de la catégorie
+                </th>
+                <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase text-right">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -67,21 +81,23 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isLoading }) =
                         autoFocus
                       />
                     ) : (
-                      <span className="text-sm font-medium text-slate-700">{cat.nom}</span>
+                      <span className="text-sm font-medium text-slate-700">
+                        {cat.nom}
+                      </span>
                     )}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       {editingId === cat.id ? (
                         <>
-                          <button 
+                          <button
                             onClick={handleUpdate}
                             className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"
                             title="Valider"
                           >
                             <Check size={18} />
                           </button>
-                          <button 
+                          <button
                             onClick={() => setEditingId(null)}
                             className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg"
                             title="Annuler"
@@ -91,14 +107,14 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isLoading }) =
                         </>
                       ) : (
                         <>
-                          <button 
+                          <button
                             onClick={() => startEdit(cat)}
                             className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg"
                             title="Modifier"
                           >
                             <Edit2 size={18} />
                           </button>
-                          <button 
+                          <button
                             onClick={() => onDelete(cat.id)}
                             className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
                             title="Supprimer"
@@ -113,7 +129,10 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isLoading }) =
               ))}
               {categories.length === 0 && (
                 <tr>
-                  <td colSpan="2" className="px-6 py-8 text-center text-slate-400 text-sm">
+                  <td
+                    colSpan="2"
+                    className="px-6 py-8 text-center text-slate-400 text-sm"
+                  >
                     Aucune catégorie personnalisée.
                   </td>
                 </tr>
@@ -122,11 +141,15 @@ const CategoryManager = ({ categories, onAdd, onUpdate, onDelete, isLoading }) =
           </table>
         </div>
       </div>
-      
+
       <div className="p-4 bg-primary-50 border border-primary-100 rounded-xl">
         <p className="text-xs text-primary-800 flex items-start gap-2">
           <Check size={14} className="mt-0.5 shrink-0" />
-          <span>Note: La modification d'une catégorie mettra à jour tous les produits qui l'utilisent. La suppression est impossible si des produits y sont encore rattachés.</span>
+          <span>
+            Note: La modification d'une catégorie mettra à jour tous les
+            produits qui l'utilisent. La suppression est impossible si des
+            produits y sont encore rattachés.
+          </span>
         </p>
       </div>
     </div>

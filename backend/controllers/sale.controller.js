@@ -1,3 +1,10 @@
+/**
+ * Controller Vente
+ * ----------------
+ * createSale/deleteSale utilisent une TRANSACTION Sequelize : la vente,
+ * la mise à jour du stock et la dette client sont validées ensemble
+ * (tout réussit, ou tout est annulé via rollback).
+ */
 import { Sale } from '../models/sale.model.js';
 import { Product } from '../models/product.model.js';
 import { Client } from '../models/client.model.js';
@@ -105,7 +112,6 @@ export const createSale = async (req, res) => {
 
     // Enregistrer la transaction client si il y a une dette
     if (clientId && debt > 0) {
-      console.log(`Log de DETTE pour client ${clientId}: ${debt} FCFA`);
       await ClientTransaction.create({
         clientId: clientId,
         type: 'DEBT',

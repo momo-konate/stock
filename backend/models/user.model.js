@@ -1,5 +1,13 @@
+/**
+ * Modèle User (Utilisateur)
+ * -------------------------
+ * Deux rôles : "admin" (patron) et "seller" (vendeur).
+ * Un vendeur est rattaché à un admin via `parentId` (hiérarchie).
+ * Les hooks bcrypt hashent le mot de passe et la réponse de sécurité
+ * AVANT enregistrement/mise à jour (jamais stockés en clair).
+ */
 import { DataTypes } from 'sequelize';
-import { sequelize } from './product.model.js';
+import { sequelize } from '../config/database.js';
 import bcrypt from 'bcryptjs';
 
 const User = sequelize.define('User', {

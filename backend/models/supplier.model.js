@@ -1,5 +1,6 @@
+// Modèle Supplier : fournisseur. Rattaché à l'utilisateur via `ownerId`.
 import { DataTypes } from 'sequelize';
-import { sequelize } from './product.model.js';
+import { sequelize } from '../config/database.js';
 
 const Supplier = sequelize.define('Supplier', {
   id: {

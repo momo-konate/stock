@@ -1,3 +1,4 @@
+// Controller Dépense : CRUD des dépenses de la boutique, isolées par ownerId.
 import { Expense } from '../models/expense.model.js';
 
 export const getExpenses = async (req, res) => {
